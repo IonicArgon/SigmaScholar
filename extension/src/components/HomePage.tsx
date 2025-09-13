@@ -1,5 +1,3 @@
-
-import { } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { signOut } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
@@ -43,7 +41,7 @@ export default function HomePage() {
             <div className="subjects-grid">
               {profile.subjects.map((subject, index) => (
                 <div key={index} className="subject-card">
-                  <h5>{subject}</h5>
+                  <h5>{subject.name}</h5>
                   <p>Ready for study assistance</p>
                   <div className="subject-stats">
                     <div className="subject-stat">
