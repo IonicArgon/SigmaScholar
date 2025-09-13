@@ -29,6 +29,7 @@ export { addFilesToSubject, removeFileFromSubject } from './functions/file-manag
 export { onFileUploaded, onFileDeleted } from './functions/storage-triggers'
 export { processFileContent } from './functions/file-processing'
 export { cleanupOrphanedUsers, validateUserState } from './functions/user-cleanup'
+export { initializeUserTransactional, completeOnboardingTransactional } from './functions/transactional-user'
 
 // For cost control, you can set the maximum number of containers that can be
 // running at the same time. This helps mitigate the impact of unexpected
