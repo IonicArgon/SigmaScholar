@@ -1,4 +1,4 @@
-import PlatformDetector from '../components/PlatformDetector'
+import PlatformDetector from '../../components/PlatformDetector'
 import './App.css'
 
 function App() {
