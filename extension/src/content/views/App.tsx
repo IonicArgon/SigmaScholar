@@ -8,7 +8,9 @@ function App() {
 
   return (
     <PlatformDetector onPlatformDetected={handlePlatformDetected} />
-  )
+    // You can add logic here to communicate with your coworker's onboarding features
+    console.log('Platform detected for potential integration:', platform)
+  }
 }
 
 export default App

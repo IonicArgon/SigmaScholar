@@ -1,0 +1,110 @@
+.platform-detector {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  margin: 1.25rem;
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  user-select: none;
+  line-height: 1em;
+}
+
+.platform-popup {
+  background-color: white;
+  color: #1f2937;
+  border-radius: 0.5rem;
+  box-shadow:
+    0 4px 6px -1px rgb(0 0 0 / 0.1),
+    0 2px 4px -2px rgb(0 0 0 / 0.1);
+  width: max-content;
+  height: min-content;
+  padding: 0.5rem 1rem;
+  margin: auto 0.5rem 0 0;
+  transition: opacity 300ms;
+}
+
+.platform-toggle-button {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 9999px;
+  box-shadow:
+    0 1px 3px 0 rgb(0 0 0 / 0.1),
+    0 1px 2px -1px rgb(0 0 0 / 0.1);
+  cursor: pointer;
+  border: 2px solid #288cd7;
+  background-color: #288cd7;
+}
+
+.platform-toggle-button:hover {
+  background-color: #1e6aa3;
+}
+
+.button-icon {
+  padding: 4px;
+}
+
+.opacity-100 {
+  opacity: 1;
+}
+
+.opacity-0 {
+  opacity: 0;
+}
+
+/* Platform detection styles */
+.platform-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.action-btn {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+}
+
+.action-btn:hover {
+  background: #e9ecef;
+  border-color: #adb5bd;
+}
+
+.platform-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  border: 2px solid white;
+}
+
+.action-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.processing-indicator {
+  margin-top: 8px;
+  padding: 8px;
+  background: #f0f0f0;
+  border-radius: 4px;
+  text-align: center;
+  font-size: 12px;
+  color: #666;
+}
