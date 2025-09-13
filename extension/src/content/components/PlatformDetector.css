@@ -1,142 +1,170 @@
-/* Modern Platform Detector Styles */
-.platform-detector {
-  position: fixed;
-  right: 20px;
-  bottom: 20px;
-  z-index: 99999;
-  display: flex;
-  align-items: flex-end;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  user-select: none;
-  line-height: 1.5;
+/* SigmaScholar Content Script Styles - Isolated */
+.sigma-scholar-platform-detector {
+  position: fixed !important;
+  right: 20px !important;
+  bottom: 20px !important;
+  z-index: 2147483647 !important;
+  display: flex !important;
+  align-items: flex-end !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  user-select: none !important;
+  line-height: 1.5 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  background: none !important;
+  box-sizing: border-box !important;
 }
 
 /* Platform Popup */
-.platform-popup {
-  background: hsl(var(--background));
-  color: hsl(var(--foreground));
-  border-radius: 16px;
-  box-shadow: var(--shadow-xl);
-  border: 1px solid hsl(var(--border));
-  width: max-content;
-  max-width: 320px;
-  padding: 20px;
-  margin-right: 12px;
-  transition: all var(--transition-normal);
-  backdrop-filter: blur(10px);
-  animation: scaleIn var(--transition-normal);
+.sigma-scholar-platform-popup {
+  background: #ffffff !important;
+  color: #171717 !important;
+  border-radius: 16px !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+  border: 1px solid #e5e7eb !important;
+  width: max-content !important;
+  max-width: 320px !important;
+  padding: 20px !important;
+  margin-right: 12px !important;
+  transition: all 300ms ease-out !important;
+  backdrop-filter: blur(10px) !important;
+  animation: sigmaScaleIn 300ms ease-out !important;
+  box-sizing: border-box !important;
+  font-size: 14px !important;
+  line-height: 1.5 !important;
 }
 
-.platform-popup::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  right: -8px;
-  transform: translateY(-50%);
-  width: 0;
-  height: 0;
-  border-top: 8px solid transparent;
-  border-bottom: 8px solid transparent;
-  border-left: 8px solid hsl(var(--background));
-  filter: drop-shadow(1px 0 1px hsl(var(--border)));
+.sigma-scholar-platform-popup::before {
+  content: '' !important;
+  position: absolute !important;
+  top: 50% !important;
+  right: -8px !important;
+  transform: translateY(-50%) !important;
+  width: 0 !important;
+  height: 0 !important;
+  border-top: 8px solid transparent !important;
+  border-bottom: 8px solid transparent !important;
+  border-left: 8px solid #ffffff !important;
+  filter: drop-shadow(1px 0 1px #e5e7eb) !important;
 }
 
-.platform-popup h3 {
-  font-size: 16px;
-  font-weight: 700;
-  margin-bottom: 8px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  letter-spacing: -0.01em;
+.sigma-scholar-platform-popup h3 {
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  margin: 0 0 8px 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  letter-spacing: -0.01em !important;
+  color: #171717 !important;
+  padding: 0 !important;
+  border: none !important;
+  background: none !important;
+  box-sizing: border-box !important;
 }
 
-.platform-popup p {
-  font-size: 14px;
-  color: hsl(var(--muted));
-  margin-bottom: 16px;
-  line-height: 1.5;
+.sigma-scholar-platform-popup p {
+  font-size: 14px !important;
+  color: #6b7280 !important;
+  margin: 0 0 16px 0 !important;
+  line-height: 1.5 !important;
+  padding: 0 !important;
+  border: none !important;
+  background: none !important;
+  box-sizing: border-box !important;
 }
 
 /* Platform Actions */
-.platform-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+.sigma-scholar-platform-actions {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  background: none !important;
+  box-sizing: border-box !important;
 }
 
-.action-btn {
-  background: hsl(var(--surface));
-  border: 1px solid hsl(var(--border));
-  border-radius: 10px;
-  padding: 12px 16px;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  text-align: left;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: hsl(var(--foreground));
-  position: relative;
-  overflow: hidden;
+.sigma-scholar-action-btn {
+  background: #f9fafb !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 10px !important;
+  padding: 12px 16px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  transition: all 150ms ease-out !important;
+  text-align: left !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  color: #171717 !important;
+  position: relative !important;
+  overflow: hidden !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+  font-family: inherit !important;
 }
 
-.action-btn::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 3px;
-  height: 100%;
-  background: var(--gradient-primary);
-  transform: scaleY(0);
-  transition: transform var(--transition-fast);
+.sigma-scholar-action-btn::before {
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 3px !important;
+  height: 100% !important;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6) !important;
+  transform: scaleY(0) !important;
+  transition: transform 150ms ease-out !important;
 }
 
-.action-btn:hover {
-  background: hsl(var(--surface-hover));
-  border-color: hsl(var(--primary) / 0.3);
-  transform: translateX(4px);
-  box-shadow: var(--shadow-sm);
+.sigma-scholar-action-btn:hover {
+  background: #f3f4f6 !important;
+  border-color: rgba(59, 130, 246, 0.3) !important;
+  transform: translateX(4px) !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1) !important;
 }
 
-.action-btn:hover::before {
-  transform: scaleY(1);
+.sigma-scholar-action-btn:hover::before {
+  transform: scaleY(1) !important;
 }
 
-.action-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
+.sigma-scholar-action-btn:disabled {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
 }
 
-.action-btn:disabled:hover::before {
-  transform: scaleY(0);
+.sigma-scholar-action-btn:disabled:hover::before {
+  transform: scaleY(0) !important;
 }
 
 /* Platform Toggle Button */
-.platform-toggle-button {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  box-shadow: var(--shadow-lg);
-  cursor: pointer;
-  border: 2px solid hsl(var(--primary));
-  background: var(--gradient-primary);
-  transition: all var(--transition-fast);
-  animation: pulse 3s infinite;
+.sigma-scholar-platform-toggle-button {
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 56px !important;
+  height: 56px !important;
+  border-radius: 50% !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1) !important;
+  cursor: pointer !important;
+  border: 2px solid #3b82f6 !important;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6) !important;
+  transition: all 150ms ease-out !important;
+  animation: sigmaPulse 3s infinite !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
 }
 
-.platform-toggle-button:hover {
-  transform: translateY(-2px) scale(1.05);
-  box-shadow: var(--shadow-xl), var(--shadow-glow);
-  animation: none;
+.sigma-scholar-platform-toggle-button:hover {
+  transform: translateY(-2px) scale(1.05) !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1), 0 0 20px rgba(59, 130, 246, 0.3) !important;
+  animation: none !important;
 }
 
 .platform-toggle-button:active {
@@ -313,7 +341,7 @@
 
 /* Responsive Design */
 @media (max-width: 768px) {
-  .platform-detector {
+  .sigma-scholar-platform-detector {
     right: 16px;
     bottom: 16px;
   }
