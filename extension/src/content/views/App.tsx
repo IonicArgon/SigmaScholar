@@ -1,4 +1,5 @@
 import PlatformDetector from '../components/PlatformDetector'
+import ExtractionDebugPanel from '../../components/ExtractionDebugPanel'
 import '../../index.css'
 import './App.css'
 
@@ -14,6 +15,7 @@ function App() {
       
       {/* Platform detection is isolated in its own component */}
       <PlatformDetector onPlatformDetected={handlePlatformDetected} />
+      <ExtractionDebugPanel />
     </>
   )
 }

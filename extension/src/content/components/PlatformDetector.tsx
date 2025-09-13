@@ -57,7 +57,52 @@ export default function PlatformDetector({ onPlatformDetected }: PlatformDetecto
         
         // Extract video data when platform is detected
         setTimeout(() => {
+          console.group('[PlatformDetector] 🔍 Video Data Extraction')
+          console.log('Current URL:', window.location.href)
+          console.log('Platform detected:', detectedPlatform)
+          
           const videoData = VideoExtractor.extractCurrentVideo()
+          
+          if (videoData) {
+            console.log('📊 Extraction Results Summary:')
+            console.table({
+              'Platform': videoData.platform,
+              'Title Length': videoData.title?.length || 0,
+              'Has Description': !!videoData.description,
+              'Has Author': !!videoData.author,
+              'Has Transcript': !!videoData.transcript,
+              'Has Audio': !!videoData.hasAudio,
+              'Duration': videoData.duration || 'Unknown',
+              'Hashtags Count': videoData.hashtags?.length || 0,
+              'Mentions Count': videoData.mentions?.length || 0,
+              'Quality': videoData.extractionQuality || 'unknown'
+            })
+            
+            if (videoData.extractionDetails) {
+              console.log('🔧 Technical Details:')
+              console.log('Title source selector:', videoData.extractionDetails.titleSource)
+              console.log('Extraction attempts:', videoData.extractionDetails.extractionAttempts)
+              console.log('Failed selectors:', videoData.extractionDetails.failedSelectors)
+            }
+            
+            // Log actual content (truncated)
+            console.log('📝 Content Preview:')
+            if (videoData.title) console.log('Title:', videoData.title.substring(0, 100) + (videoData.title.length > 100 ? '...' : ''))
+            if (videoData.description) console.log('Description:', videoData.description.substring(0, 100) + (videoData.description.length > 100 ? '...' : ''))
+            if (videoData.author) console.log('Author:', videoData.author)
+            if (videoData.transcript) console.log('Transcript:', videoData.transcript.substring(0, 100) + (videoData.transcript.length > 100 ? '...' : ''))
+            if (videoData.hashtags && videoData.hashtags.length > 0) console.log('Hashtags:', videoData.hashtags)
+            if (videoData.mentions && videoData.mentions.length > 0) console.log('Mentions:', videoData.mentions)
+            
+          } else {
+            console.log('❌ No video data extracted')
+            console.log('Available DOM elements:')
+            console.log('- Video elements:', document.querySelectorAll('video').length)
+            console.log('- H1 elements:', document.querySelectorAll('h1').length)
+            console.log('- Meta elements:', document.querySelectorAll('meta').length)
+          }
+          
+          console.groupEnd()
           setCurrentVideo(videoData)
         }, 1000) // Wait for page to fully load
       }
