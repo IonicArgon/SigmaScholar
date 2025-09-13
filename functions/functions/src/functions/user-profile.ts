@@ -9,6 +9,7 @@ const mongodbUri = defineSecret('MONGODB_URI');
 
 /**
  * Initialize a new user with default onboarding status
+ * Implements robust error handling and state validation
  */
 export const initializeUser = onCall({
   secrets: [mongodbUri],
@@ -24,8 +25,18 @@ export const initializeUser = onCall({
   console.log(`[initializeUser] Called for UID: ${uid}, name: ${name}, email: ${email}`)
   
   try {
-    // Check if user already exists and update display name if needed
+    // First, verify Firebase Auth user exists and is valid
+    try {
+      await admin.auth().getUser(uid)
+    } catch (authError) {
+      console.error(`[initializeUser] Firebase Auth user ${uid} not found:`, authError)
+      throw new Error('Firebase Auth user not found')
+    }
+
+    // Check MongoDB connection before proceeding
     const usersCollection = await getUsersCollection()
+    
+    // Check if user already exists in MongoDB
     const existingUser = await usersCollection.findOne({ firebaseUid: uid })
     
     if (existingUser) {
@@ -43,6 +54,12 @@ export const initializeUser = onCall({
             }
           }
         )
+        
+        // Ensure Firebase custom claims are set correctly
+        await admin.auth().setCustomUserClaims(uid, { 
+          isOnboarded: existingUser.profile.isOnboarded 
+        })
+        
         return {
           success: true,
           message: 'User display name updated',
@@ -50,6 +67,12 @@ export const initializeUser = onCall({
         }
       } else {
         console.log(`[initializeUser] User ${uid} already exists with display name "${existingDisplayName}", no update needed`)
+        
+        // Ensure Firebase custom claims are set correctly
+        await admin.auth().setCustomUserClaims(uid, { 
+          isOnboarded: existingUser.profile.isOnboarded 
+        })
+        
         return {
           success: true,
           message: 'User already initialized',
@@ -59,9 +82,6 @@ export const initializeUser = onCall({
     }
     
     console.log(`[initializeUser] Creating new user for UID: ${uid}`)
-    
-    // Set custom claim for onboarding status
-    await admin.auth().setCustomUserClaims(uid, { isOnboarded: false })
     
     const user = {
       firebaseUid: uid,
@@ -75,9 +95,24 @@ export const initializeUser = onCall({
       subjects: [] // Initialize with empty subjects array
     }
     
-    // Insert new user document (we already checked it doesn't exist)
+    // Insert new user document with transaction-like behavior
     const insertResult = await usersCollection.insertOne(user)
-    console.log(`[initializeUser] User created with _id: ${insertResult.insertedId}`)
+    
+    if (!insertResult.insertedId) {
+      throw new Error('Failed to create user document in MongoDB')
+    }
+    
+    // Only set custom claims after successful MongoDB insertion
+    try {
+      await admin.auth().setCustomUserClaims(uid, { isOnboarded: false })
+    } catch (claimsError) {
+      console.error(`[initializeUser] Failed to set custom claims for ${uid}:`, claimsError)
+      // Rollback: Remove the MongoDB document we just created
+      await usersCollection.deleteOne({ firebaseUid: uid })
+      throw new Error('Failed to set Firebase custom claims - user creation rolled back')
+    }
+    
+    console.log(`[initializeUser] User created successfully with _id: ${insertResult.insertedId}`)
     
     return {
       success: true,
@@ -86,7 +121,12 @@ export const initializeUser = onCall({
     }
   } catch (error) {
     console.error('Error initializing user:', error)
-    throw new Error('Failed to initialize user')
+    
+    // Enhanced error reporting
+    if (error instanceof Error) {
+      throw new Error(`User initialization failed: ${error.message}`)
+    }
+    throw new Error('Failed to initialize user due to unknown error')
   }
 })
 
@@ -139,7 +179,7 @@ export const updateUserProfile = onCall<{ displayName?: string; email?: string }
 })
 
 /**
- * Get user profile and subjects data
+ * Get user profile and subjects data with automatic recovery
  */
 export const getUserData = onCall({
   secrets: [mongodbUri],
@@ -159,7 +199,46 @@ export const getUserData = onCall({
     
     const user = await usersCollection.findOne({ firebaseUid: uid })
     if (!user) {
-      throw new Error('User not found')
+      console.warn(`[getUserData] User ${uid} not found in MongoDB, attempting recovery`)
+      
+      // Check if Firebase Auth user exists
+      try {
+        const firebaseUser = await admin.auth().getUser(uid)
+        console.log(`[getUserData] Firebase Auth user exists, creating MongoDB record`)
+        
+        // Create the missing MongoDB record
+        const newUser = {
+          firebaseUid: uid,
+          profile: {
+            displayName: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
+            email: firebaseUser.email || '',
+            isOnboarded: false,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          },
+          subjects: []
+        }
+        
+        const insertResult = await usersCollection.insertOne(newUser)
+        
+        // Set custom claims
+        await admin.auth().setCustomUserClaims(uid, { isOnboarded: false })
+        
+        console.log(`[getUserData] Recovery successful, created user with _id: ${insertResult.insertedId}`)
+        
+        return {
+          success: true,
+          displayName: newUser.profile.displayName,
+          email: newUser.profile.email,
+          createdAt: newUser.profile.createdAt,
+          updatedAt: newUser.profile.updatedAt,
+          subjects: [],
+          recovered: true
+        }
+      } catch (authError) {
+        console.error(`[getUserData] Firebase Auth user ${uid} also not found:`, authError)
+        throw new Error('User not found in both Firebase Auth and MongoDB')
+      }
     }
     
     console.log(`[getUserData] Found user with ${user.subjects?.length || 0} subjects`)
@@ -187,6 +266,10 @@ export const getUserData = onCall({
     }
   } catch (error) {
     console.error('Error fetching user data:', error)
-    throw new Error('Failed to fetch user data')
+    
+    if (error instanceof Error) {
+      throw new Error(`Failed to fetch user data: ${error.message}`)
+    }
+    throw new Error('Failed to fetch user data due to unknown error')
   }
 })

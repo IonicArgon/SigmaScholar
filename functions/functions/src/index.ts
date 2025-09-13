@@ -10,14 +10,6 @@
 import {setGlobalOptions} from "firebase-functions";
 import * as admin from 'firebase-admin'
 
-// Import all function modules
-import { initializeUser, updateUserProfile, getUserData } from './functions/user-profile'
-import { completeOnboarding } from './functions/onboarding'
-import { addSubject, removeSubject } from './functions/subject-management'
-import { addFilesToSubject, removeFileFromSubject } from './functions/file-management'
-import { processFileContent } from './functions/file-processing'
-import { onFileUploaded, onFileDeleted } from './functions/storage-triggers'
-
 // Initialize Firebase Admin
 if (!admin.apps.length) {
   // For local development, use default credentials
@@ -30,30 +22,13 @@ if (!admin.apps.length) {
 }
 
 // Export all functions
-export {
-  // User profile management
-  initializeUser,
-  updateUserProfile,
-  getUserData,
-  
-  // Onboarding
-  completeOnboarding,
-  
-  // Subject management
-  addSubject,
-  removeSubject,
-  
-  // File management
-  addFilesToSubject,
-  removeFileFromSubject,
-  
-  // File processing
-  processFileContent,
-  
-  // Storage triggers
-  onFileUploaded,
-  onFileDeleted
-}
+export { initializeUser, updateUserProfile, getUserData } from './functions/user-profile'
+export { completeOnboarding } from './functions/onboarding'
+export { addSubject, removeSubject } from './functions/subject-management'
+export { addFilesToSubject, removeFileFromSubject } from './functions/file-management'
+export { onFileUploaded, onFileDeleted } from './functions/storage-triggers'
+export { processFileContent } from './functions/file-processing'
+export { cleanupOrphanedUsers, validateUserState } from './functions/user-cleanup'
 
 // For cost control, you can set the maximum number of containers that can be
 // running at the same time. This helps mitigate the impact of unexpected
