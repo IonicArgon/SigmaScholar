@@ -1,11 +1,21 @@
 import { onCall } from 'firebase-functions/v2/https'
-import { defineSecret } from 'firebase-functions/params'
 import * as admin from 'firebase-admin'
-import { getUsersCollection } from '../lib/mongodb'
-import { Subject, FileMetadata } from '../types/user'
+import { getFirestore } from 'firebase-admin/firestore'
 
-// Define MongoDB secret
-const mongodbUri = defineSecret('MONGODB_URI');
+// Initialize Firestore
+const db = getFirestore()
+
+// Types
+interface FileMetadata {
+  fileName: string
+  originalName: string
+  fileSize: number
+  mimeType: string
+  storagePath: string
+  downloadUrl?: string
+  uploadedAt: Date
+  processingStatus: 'pending' | 'completed' | 'failed'
+}
 
 /**
  * Add files to an existing subject
@@ -18,9 +28,7 @@ export const addFilesToSubject = onCall<{
     type: string
     data: string // base64 data URL
   }>
-}>({
-  secrets: [mongodbUri],
-}, async (request) => {
+}>({}, async (request) => {
   const { auth, data } = request
   
   if (!auth) {
@@ -37,16 +45,32 @@ export const addFilesToSubject = onCall<{
   console.log(`[addFilesToSubject] Adding ${files.length} files to "${subjectName}" for UID: ${uid}`)
   
   try {
-    const usersCollection = await getUsersCollection()
+    // Find the subject in Firestore
+    const subjectsQuery = await db.collection('subjects')
+      .where('userId', '==', uid)
+      .where('name', '==', subjectName)
+      .get()
     
-    // Upload files to Firebase Storage
-    const uploadedFiles: FileMetadata[] = await Promise.all(files.map(async (file) => {
+    if (subjectsQuery.empty) {
+      throw new Error('Subject not found')
+    }
+    
+    const subjectDoc = subjectsQuery.docs[0]
+    const subjectRef = subjectDoc.ref
+    
+    // Upload files to Firebase Storage and create file documents
+    const batch = db.batch()
+    const uploadedFiles: FileMetadata[] = []
+    
+    for (const file of files) {
       const timestamp = Date.now()
       const sanitizedSubjectName = subjectName.replace(/[^a-zA-Z0-9]/g, '_')
       const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9.]/g, '_')
       const uniqueFileName = `${timestamp}_${sanitizedFileName}`
       
       const storagePath = `users/${uid}/subjects/${sanitizedSubjectName}/${uniqueFileName}`
+      
+      let fileMetadata: FileMetadata
       
       try {
         const base64Data = file.data.split(',')[1]
@@ -71,7 +95,7 @@ export const addFilesToSubject = onCall<{
         
         console.log(`[addFilesToSubject] Uploaded file: ${storagePath}`)
         
-        return {
+        fileMetadata = {
           fileName: uniqueFileName,
           originalName: file.name,
           fileSize: file.size,
@@ -83,7 +107,7 @@ export const addFilesToSubject = onCall<{
         }
       } catch (error) {
         console.error(`[addFilesToSubject] Failed to upload file ${file.name}:`, error)
-        return {
+        fileMetadata = {
           fileName: uniqueFileName,
           originalName: file.name,
           fileSize: file.size,
@@ -93,21 +117,28 @@ export const addFilesToSubject = onCall<{
           processingStatus: 'failed' as const
         }
       }
-    }))
-    
-    // Update MongoDB with new files
-    const result = await usersCollection.updateOne(
-      { firebaseUid: uid, 'subjects.name': subjectName },
-      { 
-        $push: { 'subjects.$.files': { $each: uploadedFiles } } as any,
-        $inc: { 'subjects.$.fileCount': uploadedFiles.length },
-        $set: { 'profile.updatedAt': new Date() }
+      
+      uploadedFiles.push(fileMetadata)
+      
+      // Create file document in Firestore
+      const fileRef = db.collection('files').doc()
+      const fileData = {
+        userId: uid,
+        subjectId: subjectDoc.id,
+        subjectName: subjectName,
+        ...fileMetadata
       }
-    )
-    
-    if (result.matchedCount === 0) {
-      throw new Error('User or subject not found')
+      batch.set(fileRef, fileData)
     }
+    
+    // Update subject file count
+    batch.update(subjectRef, {
+      fileCount: admin.firestore.FieldValue.increment(uploadedFiles.length),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    })
+    
+    // Commit all changes
+    await batch.commit()
     
     const successfulUploads = uploadedFiles.filter(f => f.processingStatus === 'completed').length
     console.log(`[addFilesToSubject] Added ${successfulUploads}/${uploadedFiles.length} files to "${subjectName}" for UID: ${uid}`)
@@ -130,9 +161,7 @@ export const addFilesToSubject = onCall<{
 export const removeFileFromSubject = onCall<{
   subjectName: string
   fileName: string
-}>({
-  secrets: [mongodbUri],
-}, async (request) => {
+}>({}, async (request) => {
   const { auth, data } = request
   
   if (!auth) {
@@ -149,46 +178,50 @@ export const removeFileFromSubject = onCall<{
   console.log(`[removeFileFromSubject] Removing file "${fileName}" from "${subjectName}" for UID: ${uid}`)
   
   try {
-    const usersCollection = await getUsersCollection()
+    // Find the file in Firestore
+    const filesQuery = await db.collection('files')
+      .where('userId', '==', uid)
+      .where('subjectName', '==', subjectName)
+      .where('fileName', '==', fileName)
+      .get()
     
-    // First, get the file info to delete from storage
-    const user = await usersCollection.findOne({ firebaseUid: uid })
-    if (!user) {
-      throw new Error('User not found')
-    }
-    
-    const subject = user.subjects?.find((s: Subject) => s.name === subjectName)
-    if (!subject) {
-      throw new Error('Subject not found')
-    }
-    
-    const fileToRemove = subject.files?.find((f: FileMetadata) => f.fileName === fileName)
-    if (!fileToRemove) {
+    if (filesQuery.empty) {
       throw new Error('File not found')
     }
+    
+    const fileDoc = filesQuery.docs[0]
+    const fileData = fileDoc.data() as FileMetadata
     
     // Delete file from Firebase Storage
     try {
       const bucket = admin.storage().bucket()
-      await bucket.file(fileToRemove.storagePath).delete()
-      console.log(`[removeFileFromSubject] Deleted file: ${fileToRemove.storagePath}`)
+      await bucket.file(fileData.storagePath).delete()
+      console.log(`[removeFileFromSubject] Deleted file: ${fileData.storagePath}`)
     } catch (error) {
-      console.warn(`[removeFileFromSubject] Failed to delete file ${fileToRemove.storagePath}:`, error)
+      console.warn(`[removeFileFromSubject] Failed to delete file ${fileData.storagePath}:`, error)
     }
     
-    // Remove file from MongoDB
-    const result = await usersCollection.updateOne(
-      { firebaseUid: uid, 'subjects.name': subjectName },
-      { 
-        $pull: { 'subjects.$.files': { fileName: fileName } } as any,
-        $inc: { 'subjects.$.fileCount': -1 },
-        $set: { 'profile.updatedAt': new Date() }
-      }
-    )
+    // Remove file document from Firestore and update subject file count
+    const batch = db.batch()
     
-    if (result.modifiedCount === 0) {
-      throw new Error('File not found or already removed')
+    // Delete file document
+    batch.delete(fileDoc.ref)
+    
+    // Find and update subject file count
+    const subjectsQuery = await db.collection('subjects')
+      .where('userId', '==', uid)
+      .where('name', '==', subjectName)
+      .get()
+    
+    if (!subjectsQuery.empty) {
+      const subjectRef = subjectsQuery.docs[0].ref
+      batch.update(subjectRef, {
+        fileCount: admin.firestore.FieldValue.increment(-1),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      })
     }
+    
+    await batch.commit()
     
     console.log(`[removeFileFromSubject] Removed file "${fileName}" from "${subjectName}" for UID: ${uid}`)
     
