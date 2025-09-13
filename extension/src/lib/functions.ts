@@ -9,6 +9,7 @@ const functions = getFunctions(getApp())
 export const completeOnboarding = httpsCallable(functions, 'completeOnboarding')
 export const addFilesToSubject = httpsCallable(functions, 'addFilesToSubject')
 export const removeFileFromSubject = httpsCallable(functions, 'removeFileFromSubject')
+export const triggerDocumentProcessing = httpsCallable(functions, 'triggerDocumentProcessing')
 
 // Note: User management, profile updates, and subject CRUD operations
 // have been migrated to frontend Firestore operations in /lib/firestore.ts

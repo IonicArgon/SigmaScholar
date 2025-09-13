@@ -1,9 +1,6 @@
 import { onCall } from 'firebase-functions/v2/https'
 import * as admin from 'firebase-admin'
-import { getFirestore } from 'firebase-admin/firestore'
-
-// Initialize Firestore
-const db = getFirestore()
+import { firestore } from '../lib/firebase'
 
 // Types
 interface FileMetadata {
@@ -46,7 +43,7 @@ export const addFilesToSubject = onCall<{
   
   try {
     // Find the subject in Firestore
-    const subjectsQuery = await db.collection('subjects')
+    const subjectsQuery = await firestore.collection('subjects')
       .where('userId', '==', uid)
       .where('name', '==', subjectName)
       .get()
@@ -59,7 +56,7 @@ export const addFilesToSubject = onCall<{
     const subjectRef = subjectDoc.ref
     
     // Upload files to Firebase Storage and create file documents
-    const batch = db.batch()
+    const batch = firestore.batch()
     const uploadedFiles: FileMetadata[] = []
     
     for (const file of files) {
@@ -121,7 +118,7 @@ export const addFilesToSubject = onCall<{
       uploadedFiles.push(fileMetadata)
       
       // Create file document in Firestore
-      const fileRef = db.collection('files').doc()
+      const fileRef = firestore.collection('files').doc()
       const fileData = {
         userId: uid,
         subjectId: subjectDoc.id,
@@ -129,6 +126,30 @@ export const addFilesToSubject = onCall<{
         ...fileMetadata
       }
       batch.set(fileRef, fileData)
+      
+      // Trigger document processing for successfully uploaded files
+      if (fileMetadata.processingStatus === 'completed') {
+        try {
+          const { PubSub } = require('@google-cloud/pubsub')
+          const pubsub = new PubSub()
+          
+          const messageData = {
+            userId: uid,
+            fileId: fileRef.id,
+            storagePath: fileMetadata.storagePath,
+            fileName: fileMetadata.fileName
+          }
+          
+          const topic = pubsub.topic('process-document')
+          await topic.publishMessage({
+            json: messageData
+          })
+          
+          console.log(`[addFilesToSubject] Triggered processing for: ${fileMetadata.fileName}`)
+        } catch (processingError) {
+          console.warn(`[addFilesToSubject] Failed to trigger processing for ${fileMetadata.fileName}:`, processingError)
+        }
+      }
     }
     
     // Update subject file count
@@ -179,7 +200,7 @@ export const removeFileFromSubject = onCall<{
   
   try {
     // Find the file in Firestore
-    const filesQuery = await db.collection('files')
+    const filesQuery = await firestore.collection('files')
       .where('userId', '==', uid)
       .where('subjectName', '==', subjectName)
       .where('fileName', '==', fileName)
@@ -202,13 +223,13 @@ export const removeFileFromSubject = onCall<{
     }
     
     // Remove file document from Firestore and update subject file count
-    const batch = db.batch()
+    const batch = firestore.batch()
     
     // Delete file document
     batch.delete(fileDoc.ref)
     
     // Find and update subject file count
-    const subjectsQuery = await db.collection('subjects')
+    const subjectsQuery = await firestore.collection('subjects')
       .where('userId', '==', uid)
       .where('name', '==', subjectName)
       .get()
