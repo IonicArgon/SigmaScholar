@@ -5,10 +5,38 @@
   max-width: 400px;
   margin: 0 auto;
   animation: fadeIn var(--transition-normal);
+  position: relative;
+  background-image: url('/Gigachad.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+.home-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.85);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.home-container > * {
+  position: relative;
+  z-index: 2;
 }
 
 .home-container:hover {
   animation: memeWobble 0.8s ease-in-out;
+}
+
+.home-container:hover::before {
+  background: rgba(255, 255, 255, 0.75);
+  transition: background 0.3s ease;
 }
 
 /* Header Section */

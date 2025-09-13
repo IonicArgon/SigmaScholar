@@ -32,8 +32,8 @@ export default function HomePage() {
       </div>
 
       <div className="home-content">
-        <h3 className="hover-meme-rainbow">Σ SigmaScholar Command Center 💪</h3>
-        <p className="home-subtitle animate-meme-wobble">Your based study grindset companion 🧠✨</p>
+        <h3>Σ SigmaScholar Command Center</h3>
+        <p className="home-subtitle">Your intelligent study companion</p>
         
         {profile?.subjects && profile.subjects.length > 0 ? (
           <div className="subjects-overview">
