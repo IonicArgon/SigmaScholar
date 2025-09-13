@@ -1,22 +1,19 @@
-import Logo from '@/assets/crx.svg'
-import { useState } from 'react'
+import PlatformDetector from '../components/PlatformDetector'
 import './App.css'
 
 function App() {
-  const [show, setShow] = useState(false)
-  const toggle = () => setShow(!show)
+  const handlePlatformDetected = (platform: string) => {
+    // You can add logic here to communicate with your coworker's onboarding features
+    console.log('Platform detected for potential integration:', platform)
+  }
 
   return (
-    <div className="popup-container">
-      {show && (
-        <div className={`popup-content ${show ? 'opacity-100' : 'opacity-0'}`}>
-          <h1>HELLO CRXJS</h1>
-        </div>
-      )}
-      <button className="toggle-button" onClick={toggle}>
-        <img src={Logo} alt="CRXJS logo" className="button-icon" />
-      </button>
-    </div>
+    <>
+      {/* Your coworker can add onboarding components here without conflicts */}
+      
+      {/* Platform detection is isolated in its own component */}
+      <PlatformDetector onPlatformDetected={handlePlatformDetected} />
+    </>
   )
 }
 
