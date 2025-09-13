@@ -169,6 +169,10 @@ const SettingsApp: React.FC = () => {
         if (uploadResult.filesFailed > 0) {
           setError(`${uploadResult.filesFailed} files failed to upload`)
         }
+        
+        // Document processing is automatically triggered by the backend
+        // after successful file uploads via Pub/Sub
+        console.log('Document processing will be triggered automatically by the backend')
       } else {
         throw new Error('Upload failed')
       }

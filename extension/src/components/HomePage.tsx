@@ -19,11 +19,14 @@ export default function HomePage() {
       <div className="home-header">
         <div className="user-info">
           <div className="user-avatar">
-            {(user?.displayName || 'U').charAt(0).toUpperCase()}
+            {(user?.displayName || 'Σ').charAt(0).toUpperCase()}
           </div>
           <div className="user-details">
-            <span>Welcome, {user?.displayName || 'User'}!</span>
+            <span>Welcome back, {user?.displayName || 'Scholar'}!</span>
             <div className="user-email">{user?.email}</div>
+          </div>
+          <div className="gigachad-icon">
+            <img src="/Gigachad.png" alt="GigaChad" />
           </div>
         </div>
         <button onClick={handleSignOut} className="sign-out-button">
@@ -32,23 +35,23 @@ export default function HomePage() {
       </div>
 
       <div className="home-content">
-        <h3>SigmaScholar Dashboard</h3>
-        <p className="home-subtitle">Your personalized study companion</p>
+        <h3>Σ SigmaScholar Command Center</h3>
+        <p className="home-subtitle">Your intelligent study companion</p>
         
         {profile?.subjects && profile.subjects.length > 0 ? (
           <div className="subjects-overview">
-            <h4>Your Subjects</h4>
+            <h4>Your Study Subjects</h4>
             <div className="subjects-grid">
               {profile.subjects.map((subject, index) => (
                 <div key={index} className="subject-card">
                   <h5>{subject.name}</h5>
-                  <p>Ready for study assistance</p>
+                  <p>Study materials and progress tracking</p>
                   <div className="subject-stats">
                     <div className="subject-stat">
-                      <span>📚 0 materials</span>
+                      <span>📚 {subject.fileCount ?? 0} materials</span>
                     </div>
                     <div className="subject-stat">
-                      <span>🎯 0 sessions</span>
+                      <span>📊 {subject.files?.length ?? 0} study sessions</span>
                     </div>
                   </div>
                 </div>
@@ -58,15 +61,15 @@ export default function HomePage() {
         ) : (
           <div className="empty-subjects">
             <div className="empty-subjects-icon">📚</div>
-            <p>No subjects configured yet.</p>
-            <p className="add-subjects-hint">Add subjects in your settings to get started</p>
+            <p>No subjects added yet.</p>
+            <p className="add-subjects-hint">Add your first subject to get started</p>
           </div>
         )}
 
         <div className="actions">
           <button className="action-button primary">
             <span className="action-button-icon">🧠</span>
-            Study Assistant
+            Study Mode
           </button>
           <button className="action-button">
             <span className="action-button-icon">📤</span>

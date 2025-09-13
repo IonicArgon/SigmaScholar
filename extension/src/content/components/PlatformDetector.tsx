@@ -243,14 +243,14 @@ export default function PlatformDetector({ onPlatformDetected }: PlatformDetecto
   }
 
   return (
-    <div className="platform-detector">
+    <div className="sigma-scholar-platform-detector">
       {show && (
-        <div className={`platform-popup ${show ? 'opacity-100' : 'opacity-0'}`}>
+        <div className={`sigma-scholar-platform-popup ${show ? 'opacity-100' : 'opacity-0'}`}>
           <h3>📱 {platformInfo.name} Detected!</h3>
           <p>SigmaScholar is ready to help with your research.</p>
-          <div className="platform-actions">
+          <div className="sigma-scholar-platform-actions">
             <button 
-              className="action-btn" 
+              className="sigma-scholar-action-btn" 
               onClick={handleSaveForResearch}
               disabled={isProcessing || !currentVideo}
             >
@@ -271,7 +271,7 @@ export default function PlatformDetector({ onPlatformDetected }: PlatformDetecto
               📋 Copy JSON
             </button>
             <button 
-              className="action-btn" 
+              className="sigma-scholar-action-btn" 
               onClick={handleAddTags}
               disabled={isProcessing || !currentVideo}
             >
@@ -279,19 +279,19 @@ export default function PlatformDetector({ onPlatformDetected }: PlatformDetecto
             </button>
           </div>
           {isProcessing && (
-            <div className="processing-indicator">
+            <div className="sigma-scholar-processing-indicator">
               <span>Processing...</span>
             </div>
           )}
         </div>
       )}
       <button 
-        className="platform-toggle-button" 
+        className="sigma-scholar-platform-toggle-button" 
         onClick={toggle}
         style={{ borderColor: platformInfo.color }}
       >
-        <img src={Logo} alt="SigmaScholar" className="button-icon" />
-        <span className="platform-badge" style={{ backgroundColor: platformInfo.color }}>
+        <img src={Logo} alt="SigmaScholar" className="sigma-scholar-button-icon" />
+        <span className="sigma-scholar-platform-badge" style={{ backgroundColor: platformInfo.color }}>
           {platform === 'youtube-shorts' ? '▶️' : platform === 'instagram-reels' ? '📸' : '🎵'}
         </span>
       </button>

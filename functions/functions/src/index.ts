@@ -24,6 +24,7 @@ if (!admin.apps.length) {
 // Export core functions only
 export { completeOnboarding } from './functions/onboarding'
 export { addFilesToSubject, removeFileFromSubject } from './functions/file-management'
+export { processDocument, triggerDocumentProcessing } from './functions/document-processing'
 
 // For cost control, you can set the maximum number of containers that can be
 // running at the same time. This helps mitigate the impact of unexpected

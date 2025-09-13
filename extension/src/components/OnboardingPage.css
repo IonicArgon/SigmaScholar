@@ -4,7 +4,7 @@
   padding: 24px;
   max-width: 400px;
   margin: 0 auto;
-  animation: fadeIn var(--transition-normal);
+  animation: fadeIn var(--transition-normal), memeWobble 3s infinite;
 }
 
 .onboarding-header {
@@ -14,6 +14,12 @@
   background: var(--gradient-surface);
   border-radius: 16px;
   border: 1px solid hsl(var(--border));
+  transition: all var(--transition-bounce);
+}
+
+.onboarding-header:hover {
+  animation: memeGigaChad 1.5s ease-in-out, memePulseGlow 1.5s infinite;
+  transform: scale(1.05);
 }
 
 .onboarding-header h2 {
@@ -25,6 +31,12 @@
   -webkit-text-fill-color: transparent;
   background-clip: text;
   letter-spacing: -0.02em;
+  animation: memeRainbow 3s infinite;
+  cursor: pointer;
+}
+
+.onboarding-header h2:hover {
+  animation: memeSpinZoom 1s ease-in-out, memeRainbow 0.5s infinite;
 }
 
 .onboarding-header p {
