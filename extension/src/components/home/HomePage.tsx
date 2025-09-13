@@ -1,4 +1,3 @@
-import { } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { signOut } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
@@ -36,49 +35,69 @@ export default function HomePage() {
     <div className="home-container">
       <div className="home-header">
         <div className="user-info">
-          <span>Welcome, {user?.displayName || 'User'}!</span>
+          <div className="user-avatar">
+            {(user?.displayName || 'Σ').charAt(0).toUpperCase()}
+          </div>
+          <div className="user-details">
+            <span>What's good, {user?.displayName || 'Sigma'}! 🗿</span>
+            <div className="user-email">{user?.email}</div>
+          </div>
         </div>
         <button onClick={handleSignOut} className="sign-out-button">
-          Sign Out
+          Touch Grass 🌱
         </button>
       </div>
 
       <div className="home-content">
-        <h3>SigmaScholar Dashboard</h3>
+        <h3>Σ SigmaScholar Command Center 💪</h3>
+        <p className="home-subtitle">Your based study grindset companion 🧠✨</p>
         
         {profile?.subjects && profile.subjects.length > 0 ? (
           <div className="subjects-overview">
-            <h4>Your Subjects:</h4>
+            <h4>Your Grindset Subjects 🔥</h4>
             <div className="subjects-grid">
               {profile.subjects.map((subject, index) => (
                 <div key={index} className="subject-card">
                   <h5>{subject.name}</h5>
-                  <p>Ready for study assistance</p>
+                  <p>Ready to absolutely demolish this 💯</p>
+                  <div className="subject-stats">
+                    <div className="subject-stat">
+                      <span>📚 {Math.floor(Math.random() * 10)} based materials</span>
+                    </div>
+                    <div className="subject-stat">
+                      <span>🎯 {Math.floor(Math.random() * 5)} sigma sessions</span>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
         ) : (
           <div className="empty-subjects">
-            <p>No subjects configured yet.</p>
+            <div className="empty-subjects-icon">😤</div>
+            <p>No subjects in the grindset yet, chief.</p>
+            <p className="add-subjects-hint">Time to lock in and add some subjects 💪</p>
           </div>
         )}
 
         <div className="actions">
-          <button className="action-button">
-            Study Assistant
+          <button className="action-button primary">
+            <span className="action-button-icon">🧠</span>
+            Sigma Study Mode
           </button>
           <button 
             className="action-button"
             onClick={() => chrome.tabs.create({ url: chrome.runtime.getURL('src/pages/settings/index.html') })}
           >
-            Settings
+            <span className="action-button-icon">⚙️</span>
+            Configure the Grind
           </button>
           <button 
             className="action-button danger"
             onClick={clearAllData}
           >
-            Reset Data
+            <span className="action-button-icon">💥</span>
+            Nuke Everything
           </button>
         </div>
       </div>
