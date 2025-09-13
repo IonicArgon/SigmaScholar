@@ -226,13 +226,18 @@
   animation: fadeIn var(--transition-normal);
 }
 
-.processing-indicator span {
-  font-size: 13px;
-  color: hsl(var(--primary));
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.sigma-scholar-processing-indicator span {
+  font-size: 13px !important;
+  color: #3b82f6 !important;
+  font-weight: 500 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  background: none !important;
+  box-sizing: border-box !important;
   gap: 8px;
 }
 
