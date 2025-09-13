@@ -45,10 +45,10 @@ export default function HomePage() {
                   <p>Ready to absolutely demolish this 💯</p>
                   <div className="subject-stats">
                     <div className="subject-stat">
-                      <span>📚 {Math.floor(Math.random() * 10)} based materials</span>
+                      <span>📚 {subject.fileCount ?? 'No'} based materials</span>
                     </div>
                     <div className="subject-stat">
-                      <span>🎯 {Math.floor(Math.random() * 5)} sigma sessions</span>
+                      <span>🎯 {subject.files?.length ?? 'No'} sigma sessions</span>
                     </div>
                   </div>
                 </div>

@@ -3,7 +3,7 @@ import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfi
 import { auth } from '@/lib/firebase'
 import { AuthProvider, useAuth } from '@/contexts/AuthContext'
 // OnboardingPage moved to extension pages
-import HomePage from '@/components/home/HomePage'
+import HomePage from '@/components/HomePage'
 import './App.css'
 
 function AppContent() {
