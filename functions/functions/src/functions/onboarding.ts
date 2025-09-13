@@ -47,6 +47,18 @@ export const completeOnboarding = onCall<OnboardingData>({}, async (request) => 
   const { subjects } = data
   
   console.log(`[completeOnboarding] Called for UID: ${uid}, subjects count: ${subjects.length}`)
+  console.log(`[completeOnboarding] Subjects data:`, JSON.stringify(subjects.map(s => ({
+    name: s.name,
+    fileCount: s.files.length,
+    files: s.files.map(f => ({
+      name: f.name,
+      size: f.size,
+      type: f.type,
+      hasData: !!f.data,
+      dataType: typeof f.data,
+      dataLength: f.data ? f.data.length : 0
+    }))
+  })), null, 2))
   
   try {
     // Check if user exists in Firestore
@@ -81,6 +93,12 @@ export const completeOnboarding = onCall<OnboardingData>({}, async (request) => 
       
       // Upload files and create file documents
       for (const file of subject.files) {
+        // Skip files without data
+        if (!file.data || typeof file.data !== 'string') {
+          console.warn(`[completeOnboarding] Skipping file ${file.name} - no data provided`)
+          continue
+        }
+        
         // Generate unique filename to prevent conflicts
         const timestamp = Date.now()
         const sanitizedSubjectName = subject.name.replace(/[^a-zA-Z0-9]/g, '_')
@@ -95,6 +113,10 @@ export const completeOnboarding = onCall<OnboardingData>({}, async (request) => 
         try {
           // Convert base64 data URL to buffer
           const base64Data = file.data.split(',')[1] // Remove data:image/jpeg;base64, prefix
+          if (!base64Data) {
+            console.warn(`[completeOnboarding] Skipping file ${file.name} - invalid base64 format`)
+            continue
+          }
           const fileBuffer = Buffer.from(base64Data, 'base64')
           
           // Upload to Firebase Storage

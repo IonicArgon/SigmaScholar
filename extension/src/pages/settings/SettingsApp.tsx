@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
-import { getUserData, updateUserProfile, addSubject, removeSubject, removeFileMetadata, FileMetadata, Subject } from '@/lib/firestore'
+import { initializeUser, updateUserProfile, addSubject, removeSubject, removeFileMetadata } from '@/lib/firestore'
+import { addFilesToSubject } from '@/lib/functions'
+import { getUserData, FileMetadata, Subject } from '@/lib/firestore'
 
 
 // Use types from firestore.ts
@@ -155,9 +157,21 @@ const SettingsApp: React.FC = () => {
         })
       )
       
-      // TODO: Implement file upload to Firebase Storage + Firestore
-      // For now, this functionality is disabled during MongoDB to Firestore migration
-      throw new Error('File upload temporarily disabled during migration')
+      // Upload files using the backend function
+      const result = await addFilesToSubject({
+        subjectName: selectedSubject,
+        files: fileDataArray
+      })
+      
+      const uploadResult = result.data as any
+      if (uploadResult?.success) {
+        console.log(`Uploaded ${uploadResult.filesAdded} files successfully`)
+        if (uploadResult.filesFailed > 0) {
+          setError(`${uploadResult.filesFailed} files failed to upload`)
+        }
+      } else {
+        throw new Error('Upload failed')
+      }
       
       setSelectedFiles(null)
       // Reset file input

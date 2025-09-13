@@ -4,8 +4,9 @@ import { getFunctions, httpsCallable } from 'firebase/functions'
 // Initialize Functions
 const functions = getFunctions(getApp())
 
-// File processing functions (still needed for complex backend operations)
-// These handle document processing, AI operations, and Firebase Storage coordination
+// Core backend functions (still needed for complex backend operations)
+// These handle file processing, onboarding, and Firebase Storage coordination
+export const completeOnboarding = httpsCallable(functions, 'completeOnboarding')
 export const addFilesToSubject = httpsCallable(functions, 'addFilesToSubject')
 export const removeFileFromSubject = httpsCallable(functions, 'removeFileFromSubject')
 

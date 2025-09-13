@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
-import { completeOnboardingTransactional } from '@/lib/functions'
+import { completeOnboarding } from '@/lib/functions'
 
 interface Subject {
   id: string
@@ -112,19 +112,8 @@ const OnboardingApp: React.FC = () => {
     }
 
     try {
-      // First, ensure user is initialized in the backend
-      const { initializeUserTransactional } = await import('@/lib/functions')
-      
-      try {
-        await initializeUserTransactional()
-        console.log('User initialized successfully')
-      } catch (initError) {
-        console.log('User might already be initialized:', initError)
-        // Continue anyway as user might already exist
-      }
-
-      // Then complete onboarding - the backend handles file storage
-      const result = await completeOnboardingTransactional({
+      // Complete onboarding - the backend handles file storage and user initialization
+      const result = await completeOnboarding({
         subjects: subjects.map(subject => ({
           name: subject.name,
           files: subject.files // Send full file data to backend
@@ -174,7 +163,7 @@ const OnboardingApp: React.FC = () => {
           errorMessage = 'Files are too large for local storage. They will be saved to the cloud instead.'
           // Continue with cloud-only storage
           try {
-            const result = await completeOnboardingTransactional({
+            const result = await completeOnboarding({
               subjects: subjects.map(subject => ({
                 name: subject.name,
                 files: subject.files
