@@ -116,12 +116,14 @@
   border-radius: 16px;
   padding: 20px;
   border: 1px solid hsl(var(--border));
-  transition: all var(--transition-fast);
+  transition: all var(--transition-bounce);
 }
 
 .subjects-overview:hover {
   border-color: hsl(var(--border-hover));
   box-shadow: var(--shadow-sm);
+  animation: memeShake 0.5s ease-in-out;
+  transform: scale(1.02);
 }
 
 .subjects-overview h4 {
@@ -137,6 +139,8 @@
 .subjects-overview h4::before {
   content: '📚';
   font-size: 18px;
+  animation: memeSpinZoom 2s infinite;
+  display: inline-block;
 }
 
 .subjects-grid {
@@ -150,10 +154,20 @@
   background: hsl(var(--background));
   border: 1px solid hsl(var(--border));
   border-radius: 12px;
-  transition: all var(--transition-fast);
+  transition: all var(--transition-elastic);
   cursor: pointer;
   position: relative;
   overflow: hidden;
+}
+
+.subject-card:nth-child(odd) {
+  animation: memeBounce 2s infinite;
+  animation-delay: 0.2s;
+}
+
+.subject-card:nth-child(even) {
+  animation: memeWobble 3s infinite;
+  animation-delay: 0.5s;
 }
 
 .subject-card::before {
@@ -170,8 +184,9 @@
 .subject-card:hover {
   background: hsl(var(--surface));
   border-color: hsl(var(--primary) / 0.3);
-  transform: translateY(-2px);
+  transform: translateY(-10px) rotate(2deg) scale(1.05);
   box-shadow: var(--shadow-md);
+  animation: memeRainbow 1s infinite, memeSpinZoom 0.8s ease-in-out;
 }
 
 .subject-card:hover::before {
