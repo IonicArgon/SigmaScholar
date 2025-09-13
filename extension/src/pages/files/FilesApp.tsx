@@ -1,49 +1,45 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
+import { getUserData, removeFileMetadata, FileMetadata, Subject } from '@/lib/firestore'
 
-interface FileData {
-  name: string
-  size: number
-  type: string
-  data?: string // Keep for backward compatibility
-  downloadUrl?: string // Firebase Storage download URL
-  subjectName: string
-}
-
-interface Subject {
-  id: string
-  name: string
-  files: Array<{
-    name: string
-    size: number
-    type: string
-    data: string
-  }>
-}
+// Use types from firestore.ts
+type FileData = FileMetadata & { subjectName: string }
 
 const FilesApp: React.FC = () => {
   const { } = useAuth()
   const [files, setFiles] = useState<FileData[]>([])
-  const [subjects, setSubjects] = useState<Subject[]>([])
+  const [subjects, setSubjects] = useState<(Subject & { files: FileMetadata[] })[]>([])
   const [selectedSubject, setSelectedSubject] = useState<string>('all')
 
   useEffect(() => {
-    // Load files and subjects from localStorage
-    const savedFiles = localStorage.getItem('sigma_files')
-    const savedSubjects = localStorage.getItem('sigma_subjects')
-    
-    if (savedFiles) {
-      setFiles(JSON.parse(savedFiles))
-    }
-    
-    if (savedSubjects) {
-      setSubjects(JSON.parse(savedSubjects))
-    }
+    loadUserData()
   }, [])
 
+  const loadUserData = async () => {
+    try {
+      const userData = await getUserData()
+      
+      const subjects = userData.subjects || []
+      setSubjects(subjects)
+      
+      // Flatten all files from all subjects
+      const allFiles: FileData[] = []
+      subjects.forEach((subject) => {
+        subject.files.forEach((file) => {
+          allFiles.push({
+            ...file,
+            subjectName: subject.name
+          })
+        })
+      })
+      setFiles(allFiles)
+    } catch (error) {
+      console.error('Error loading user data:', error)
+    }
+  }
+
   const openFile = (file: FileData) => {
-    // Use Firebase Storage download URL if available, fallback to data URL
-    const fileUrl = file.downloadUrl || file.data
+    const fileUrl = file.downloadUrl
     
     if (!fileUrl) {
       alert('File URL not available. Please try re-uploading the file.')
@@ -53,12 +49,12 @@ const FilesApp: React.FC = () => {
     try {
       const newWindow = window.open()
       if (newWindow) {
-        if (file.type.startsWith('text/') || file.type === 'application/pdf') {
+        if (file.mimeType.startsWith('text/') || file.mimeType === 'application/pdf') {
           // For text files and PDFs, create an iframe
           newWindow.document.write(`
             <html>
               <head>
-                <title>${file.name}</title>
+                <title>${file.originalName}</title>
                 <style>
                   body { margin: 0; font-family: Arial, sans-serif; }
                   .header { padding: 20px; background: #f5f5f5; border-bottom: 1px solid #ddd; }
@@ -68,9 +64,9 @@ const FilesApp: React.FC = () => {
               </head>
               <body>
                 <div class="header">
-                  <h2>${file.name}</h2>
-                  <p>Subject: ${file.subjectName} | Size: ${(file.size / 1024).toFixed(1)} KB</p>
-                  <p>Source: ${file.downloadUrl ? 'Firebase Storage' : 'Local Data'}</p>
+                  <h2>${file.originalName}</h2>
+                  <p>Subject: ${file.subjectName} | Size: ${(file.fileSize / 1024).toFixed(1)} KB</p>
+                  <p>Source: Firebase Storage</p>
                 </div>
                 <div class="content">
                   <iframe src="${fileUrl}"></iframe>
@@ -78,12 +74,12 @@ const FilesApp: React.FC = () => {
               </body>
             </html>
           `)
-        } else if (file.type.startsWith('image/')) {
+        } else if (file.mimeType.startsWith('image/')) {
           // For images, display directly
           newWindow.document.write(`
             <html>
               <head>
-                <title>${file.name}</title>
+                <title>${file.originalName}</title>
                 <style>
                   body { margin: 0; padding: 20px; font-family: Arial, sans-serif; text-align: center; }
                   .header { margin-bottom: 20px; }
@@ -92,11 +88,11 @@ const FilesApp: React.FC = () => {
               </head>
               <body>
                 <div class="header">
-                  <h2>${file.name}</h2>
-                  <p>Subject: ${file.subjectName} | Size: ${(file.size / 1024).toFixed(1)} KB</p>
-                  <p>Source: ${file.downloadUrl ? 'Firebase Storage' : 'Local Data'}</p>
+                  <h2>${file.originalName}</h2>
+                  <p>Subject: ${file.subjectName} | Size: ${(file.fileSize / 1024).toFixed(1)} KB</p>
+                  <p>Source: Firebase Storage</p>
                 </div>
-                <img src="${fileUrl}" alt="${file.name}" />
+                <img src="${fileUrl}" alt="${file.originalName}" />
               </body>
             </html>
           `)
@@ -105,7 +101,7 @@ const FilesApp: React.FC = () => {
           newWindow.document.write(`
             <html>
               <head>
-                <title>${file.name}</title>
+                <title>${file.originalName}</title>
                 <style>
                   body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
                   .download-container { text-align: center; margin-top: 50px; }
@@ -123,11 +119,11 @@ const FilesApp: React.FC = () => {
               </head>
               <body>
                 <div class="download-container">
-                  <h2>${file.name}</h2>
-                  <p>Subject: ${file.subjectName} | Size: ${(file.size / 1024).toFixed(1)} KB</p>
-                  <p>Source: ${file.downloadUrl ? 'Firebase Storage' : 'Local Data'}</p>
+                  <h2>${file.originalName}</h2>
+                  <p>Subject: ${file.subjectName} | Size: ${(file.fileSize / 1024).toFixed(1)} KB</p>
+                  <p>Source: Firebase Storage</p>
                   <p>This file type cannot be previewed in the browser.</p>
-                  <a href="${fileUrl}" download="${file.name}" class="download-button">
+                  <a href="${fileUrl}" download="${file.originalName}" class="download-button">
                     Download File
                   </a>
                 </div>
@@ -143,34 +139,36 @@ const FilesApp: React.FC = () => {
     }
   }
 
-  const deleteFile = (fileName: string, subjectName: string) => {
-    // Remove from files list
-    const updatedFiles = files.filter(f => !(f.name === fileName && f.subjectName === subjectName))
-    setFiles(updatedFiles)
-    localStorage.setItem('sigma_files', JSON.stringify(updatedFiles))
+  const deleteFile = async (fileName: string, subjectName: string) => {
+    if (!confirm(`Are you sure you want to delete "${fileName}"? This cannot be undone.`)) return
     
-    // Remove from subjects
-    const updatedSubjects = subjects.map(subject => {
-      if (subject.name === subjectName) {
-        return {
-          ...subject,
-          files: subject.files.filter(f => f.name !== fileName)
-        }
-      }
-      return subject
-    })
-    setSubjects(updatedSubjects)
-    localStorage.setItem('sigma_subjects', JSON.stringify(updatedSubjects))
+    try {
+      await removeFileMetadata(fileName, subjectName)
+      
+      // Reload data after deletion
+      await loadUserData()
+    } catch (error) {
+      console.error('Error deleting file:', error)
+      alert('Failed to delete file. Please try again.')
+    }
   }
 
-  const clearAllFiles = () => {
-    if (confirm('Are you sure you want to delete all files? This cannot be undone.')) {
-      setFiles([])
-      localStorage.removeItem('sigma_files')
+  const clearAllFiles = async () => {
+    if (!confirm('Are you sure you want to delete all files? This cannot be undone.')) return
+    
+    try {
+      // Delete all files from all subjects
+      for (const subject of subjects) {
+        for (const file of subject.files) {
+          await removeFileMetadata(file.fileName, subject.name)
+        }
+      }
       
-      const clearedSubjects = subjects.map(subject => ({ ...subject, files: [] }))
-      setSubjects(clearedSubjects)
-      localStorage.setItem('sigma_subjects', JSON.stringify(clearedSubjects))
+      // Reload data after deletion
+      await loadUserData()
+    } catch (error) {
+      console.error('Error clearing all files:', error)
+      alert('Failed to clear all files. Please try again.')
     }
   }
 
@@ -178,7 +176,7 @@ const FilesApp: React.FC = () => {
     ? files 
     : files.filter(f => f.subjectName === selectedSubject)
 
-  const totalSize = files.reduce((sum, file) => sum + file.size, 0)
+  const totalSize = files.reduce((sum, file) => sum + file.fileSize, 0)
 
   return (
     <div className="files-container">
@@ -212,8 +210,8 @@ const FilesApp: React.FC = () => {
           >
             <option value="all">All Subjects</option>
             {subjects.map(subject => (
-              <option key={subject.id} value={subject.name}>
-                {subject.name} ({subject.files.length} files)
+              <option key={subject.name} value={subject.name}>
+                {subject.name} ({subject.fileCount} files)
               </option>
             ))}
           </select>
@@ -232,20 +230,23 @@ const FilesApp: React.FC = () => {
           </div>
         ) : (
           filteredFiles.map((file, index) => (
-            <div key={`${file.name}-${file.subjectName}-${index}`} className="file-card">
+            <div key={`${file.fileName}-${file.subjectName}-${index}`} className="file-card">
               <div className="file-icon">
-                {file.type.startsWith('image/') ? '🖼️' : 
-                 file.type.includes('pdf') ? '📄' : 
-                 file.type.startsWith('text/') ? '📝' : 
-                 file.type.includes('word') ? '📄' : 
-                 file.type.includes('presentation') ? '📊' : '📁'}
+                {file.mimeType.startsWith('image/') ? '🖼️' : 
+                 file.mimeType.includes('pdf') ? '📄' : 
+                 file.mimeType.startsWith('text/') ? '📝' : 
+                 file.mimeType.includes('word') ? '📄' : 
+                 file.mimeType.includes('presentation') ? '📊' : '📁'}
               </div>
               
               <div className="file-info">
-                <h4 title={file.name}>{file.name}</h4>
+                <h4 title={file.originalName}>{file.originalName}</h4>
                 <p className="file-subject">Subject: {file.subjectName}</p>
                 <p className="file-details">
-                  {file.type} • {(file.size / 1024).toFixed(1)} KB
+                  {file.mimeType} • {(file.fileSize / 1024).toFixed(1)} KB
+                </p>
+                <p className="file-status">
+                  Status: {file.processingStatus}
                 </p>
               </div>
               
@@ -258,7 +259,7 @@ const FilesApp: React.FC = () => {
                   Open
                 </button>
                 <button 
-                  onClick={() => deleteFile(file.name, file.subjectName)}
+                  onClick={() => deleteFile(file.fileName, file.subjectName)}
                   className="delete-button"
                   title="Delete file"
                 >
@@ -274,11 +275,12 @@ const FilesApp: React.FC = () => {
         <details>
           <summary>Debug Information</summary>
           <div className="debug-content">
-            <h4>localStorage Keys:</h4>
+            <h4>Data Source:</h4>
             <ul>
-              <li>sigma_files: {localStorage.getItem('sigma_files') ? 'Present' : 'Missing'}</li>
-              <li>sigma_subjects: {localStorage.getItem('sigma_subjects') ? 'Present' : 'Missing'}</li>
-              <li>sigma_onboarded: {localStorage.getItem('sigma_onboarded') || 'false'}</li>
+              <li>Source: Firebase Functions + MongoDB</li>
+              <li>Storage: Firebase Storage</li>
+              <li>Files loaded: {files.length}</li>
+              <li>Subjects loaded: {subjects.length}</li>
             </ul>
             
             <h4>Raw Data:</h4>

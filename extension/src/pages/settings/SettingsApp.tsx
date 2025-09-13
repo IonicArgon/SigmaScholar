@@ -1,36 +1,19 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
-import { getFunctions, httpsCallable } from 'firebase/functions'
+import { getUserData, updateUserProfile, addSubject, removeSubject, removeFileMetadata, FileMetadata, Subject } from '@/lib/firestore'
 
 
-interface Subject {
-  name: string
-  createdAt: Date
-  fileCount: number
-  files: FileMetadata[]
-}
+// Use types from firestore.ts
 
-interface FileMetadata {
-  fileName: string
-  originalName: string
-  fileSize: number
-  mimeType: string
-  storagePath: string
-  downloadUrl: string
-  uploadedAt: Date
-  processingStatus: 'pending' | 'completed' | 'failed'
-}
-
-interface UserProfile {
-  displayName: string
-  email: string
-  createdAt: Date
-  updatedAt: Date
-}
 
 interface UserData {
-  profile: UserProfile
-  subjects: Subject[]
+  profile: {
+    displayName: string
+    email: string
+    createdAt: Date
+    updatedAt: Date
+  }
+  subjects: (Subject & { files: FileMetadata[] })[]
 }
 
 const SettingsApp: React.FC = () => {
@@ -56,7 +39,7 @@ const SettingsApp: React.FC = () => {
   const [uploadingFiles, setUploadingFiles] = useState(false)
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null)
 
-  const functions = getFunctions()
+  // Removed Firebase Functions dependency
 
   useEffect(() => {
     loadUserData()
@@ -69,19 +52,17 @@ const SettingsApp: React.FC = () => {
       setLoading(true)
       setError(null)
       
-      const getUserData = httpsCallable(functions, 'getUserData')
-      const result = await getUserData()
-      const data = result.data as any
+      const data = await getUserData()
       
       console.log('Raw getUserData response:', data)
       
-      // Handle the actual data structure returned by Firebase
+      // Handle the actual data structure returned by Firestore
       const userData: UserData = {
         profile: {
-          displayName: data.displayName || user?.displayName || 'User',
-          email: data.email || user?.email || '',
-          createdAt: data.createdAt ? new Date(data.createdAt) : new Date(),
-          updatedAt: data.updatedAt ? new Date(data.updatedAt) : new Date()
+          displayName: data.profile.displayName || user?.displayName || 'User',
+          email: data.profile.email || user?.email || '',
+          createdAt: data.profile.createdAt ? new Date(data.profile.createdAt) : new Date(),
+          updatedAt: data.profile.updatedAt ? new Date(data.profile.updatedAt) : new Date()
         },
         subjects: data.subjects || []
       }
@@ -104,7 +85,6 @@ const SettingsApp: React.FC = () => {
     
     try {
       setEditingProfile(false)
-      const updateUserProfile = httpsCallable(functions, 'updateUserProfile')
       await updateUserProfile({ displayName: newDisplayName.trim() })
       
       // Reload user data to reflect changes
@@ -115,13 +95,12 @@ const SettingsApp: React.FC = () => {
     }
   }
 
-  const addSubject = async () => {
+  const addSubjectHandler = async () => {
     if (!user || !newSubjectName.trim()) return
     
     try {
       setAddingSubject(true)
-      const addSubjectFunc = httpsCallable(functions, 'addSubject')
-      await addSubjectFunc({ subjectName: newSubjectName.trim() })
+      await addSubject(newSubjectName.trim())
       
       setNewSubjectName('')
       await loadUserData()
@@ -133,12 +112,11 @@ const SettingsApp: React.FC = () => {
     }
   }
 
-  const removeSubject = async (subjectName: string) => {
+  const removeSubjectHandler = async (subjectName: string) => {
     if (!user || !confirm(`Are you sure you want to delete "${subjectName}" and all its files? This cannot be undone.`)) return
     
     try {
-      const removeSubjectFunc = httpsCallable(functions, 'removeSubject')
-      await removeSubjectFunc({ subjectName })
+      await removeSubject(subjectName)
       
       // Reset selected subject if it was deleted
       if (selectedSubject === subjectName) {
@@ -177,11 +155,9 @@ const SettingsApp: React.FC = () => {
         })
       )
       
-      const addFilesToSubject = httpsCallable(functions, 'addFilesToSubject')
-      await addFilesToSubject({
-        subjectName: selectedSubject,
-        files: fileDataArray
-      })
+      // TODO: Implement file upload to Firebase Storage + Firestore
+      // For now, this functionality is disabled during MongoDB to Firestore migration
+      throw new Error('File upload temporarily disabled during migration')
       
       setSelectedFiles(null)
       // Reset file input
@@ -201,8 +177,7 @@ const SettingsApp: React.FC = () => {
     if (!user || !confirm(`Are you sure you want to delete "${fileName}"? This cannot be undone.`)) return
     
     try {
-      const removeFileFromSubject = httpsCallable(functions, 'removeFileFromSubject')
-      await removeFileFromSubject({ subjectName, fileName })
+      await removeFileMetadata(fileName, subjectName)
       
       await loadUserData()
     } catch (err) {
@@ -471,7 +446,7 @@ const SettingsApp: React.FC = () => {
                   disabled={addingSubject}
                 />
                 <button 
-                  onClick={addSubject} 
+                  onClick={addSubjectHandler} 
                   disabled={!newSubjectName.trim() || addingSubject}
                   className="add-button"
                 >
@@ -499,7 +474,7 @@ const SettingsApp: React.FC = () => {
                       </div>
                       <div className="subject-actions">
                         <button 
-                          onClick={() => removeSubject(subject.name)}
+                          onClick={() => removeSubjectHandler(subject.name)}
                           className="delete-button"
                         >
                           Delete
