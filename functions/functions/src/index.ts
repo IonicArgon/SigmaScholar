@@ -15,6 +15,8 @@ import { initializeUser, updateUserProfile, getUserData } from './functions/user
 import { completeOnboarding } from './functions/onboarding'
 import { addSubject, removeSubject } from './functions/subject-management'
 import { addFilesToSubject, removeFileFromSubject } from './functions/file-management'
+import { processFileContent } from './functions/file-processing'
+import { onFileUploaded, onFileDeleted } from './functions/storage-triggers'
 
 // Initialize Firebase Admin
 if (!admin.apps.length) {
@@ -43,7 +45,14 @@ export {
   
   // File management
   addFilesToSubject,
-  removeFileFromSubject
+  removeFileFromSubject,
+  
+  // File processing
+  processFileContent,
+  
+  // Storage triggers
+  onFileUploaded,
+  onFileDeleted
 }
 
 // For cost control, you can set the maximum number of containers that can be

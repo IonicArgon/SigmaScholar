@@ -31,6 +31,25 @@ export interface FileMetadata {
   downloadUrl?: string // Firebase Storage download URL
   uploadedAt: Date
   processingStatus?: 'pending' | 'processing' | 'completed' | 'failed'
+  processingQueuedAt?: Date
+  processingStartedAt?: Date
+  processingFailedAt?: Date
+  processingError?: string
+  processingData?: {
+    chunks: ProcessedChunk[]
+    totalChunks: number
+    totalTokens: number
+    processedAt: Date
+    completedAt: Date
+  }
+}
+
+export interface ProcessedChunk {
+  raw_text: string
+  cleaned_text: string
+  chunk_index: number
+  element_type: string
+  metadata?: any
 }
 
 export interface OnboardingData {

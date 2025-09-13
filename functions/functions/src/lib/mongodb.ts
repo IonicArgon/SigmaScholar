@@ -1,11 +1,11 @@
 import { MongoClient, Db, Collection, Document, ServerApiVersion } from 'mongodb'
-import { defineString } from 'firebase-functions/params'
+import { defineString, defineSecret } from 'firebase-functions/params'
 
 let client: MongoClient | null = null
 let db: Db | null = null
 
 // Define parameterized configuration
-const mongodbUri = defineString('MONGODB_URI')
+const mongodbUri = defineSecret('MONGODB_URI')
 const mongodbDatabase = defineString('MONGODB_DATABASE', { default: 'sigmaMain' })
 
 export async function connectToMongoDB(): Promise<Db> {
