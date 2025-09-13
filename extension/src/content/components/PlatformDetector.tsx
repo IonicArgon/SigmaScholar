@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import './PlatformDetector.css'
 import { VideoExtractor, VideoData } from '../utils/videoExtractor'
 import { LocalStorage } from '../utils/localStorage'
-import { CohereAPI } from '../utils/cohereAPI'
+import { JSONExporter } from '../utils/jsonExporter'
 
 type Platform = 'youtube-shorts' | 'instagram-reels' | 'tiktok' | 'other'
 
@@ -191,29 +191,36 @@ export default function PlatformDetector({ onPlatformDetected }: PlatformDetecto
     }
   }
 
-  const handleGenerateQuestions = async () => {
+  const handleExportJSON = () => {
     if (!currentVideo) return
     
     setIsProcessing(true)
     try {
-      // For now, we'll use a placeholder API key prompt
-      // In production, this should be configured in settings
-      const apiKey = prompt('Enter your Cohere API key (get one free at cohere.ai):')
-      if (!apiKey) {
-        setIsProcessing(false)
-        return
-      }
+      // Download JSON file
+      JSONExporter.downloadJSON(currentVideo)
       
-      CohereAPI.setApiKey(apiKey)
-      const questions = await CohereAPI.generateQuestions(currentVideo)
+      // Also log to console for easy access
+      JSONExporter.logToConsole(currentVideo)
       
-      await LocalStorage.saveVideo(currentVideo)
-      await LocalStorage.updateVideoQuestions(currentVideo.id, questions)
-      
-      alert(`Generated ${questions.length} study questions!\n\n${questions.join('\n\n')}`)
+      alert('Video data exported to JSON file and logged to console!')
     } catch (error) {
-      console.error('Error generating questions:', error)
-      alert('Error generating questions. Please check your API key and try again.')
+      console.error('Error exporting JSON:', error)
+      alert('Error exporting JSON. Please try again.')
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
+  const handleCopyJSON = async () => {
+    if (!currentVideo) return
+    
+    setIsProcessing(true)
+    try {
+      await JSONExporter.copyToClipboard(currentVideo)
+      alert('Video data copied to clipboard as JSON!')
+    } catch (error) {
+      console.error('Error copying to clipboard:', error)
+      alert('Error copying to clipboard. Please try again.')
     } finally {
       setIsProcessing(false)
     }
@@ -251,10 +258,17 @@ export default function PlatformDetector({ onPlatformDetected }: PlatformDetecto
             </button>
             <button 
               className="action-btn" 
-              onClick={handleGenerateQuestions}
+              onClick={handleExportJSON}
               disabled={isProcessing || !currentVideo}
             >
-              🧠 Generate Questions
+              📄 Export JSON
+            </button>
+            <button 
+              className="action-btn" 
+              onClick={handleCopyJSON}
+              disabled={isProcessing || !currentVideo}
+            >
+              📋 Copy JSON
             </button>
             <button 
               className="action-btn" 

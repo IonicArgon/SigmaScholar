@@ -24,10 +24,141 @@ export interface VideoData {
 }
 
 export class VideoExtractor {
+  // Store accumulated transcript data
+  private static transcriptAccumulator: Map<string, {
+    segments: Set<string>
+    lastUpdate: number
+    isComplete: boolean
+  }> = new Map()
+
+  // Clear old transcript data (cleanup)
+  private static cleanupOldTranscripts(): void {
+    const now = Date.now()
+    const maxAge = 10 * 60 * 1000 // 10 minutes
+    
+    for (const [key, data] of this.transcriptAccumulator.entries()) {
+      if (now - data.lastUpdate > maxAge) {
+        this.transcriptAccumulator.delete(key)
+      }
+    }
+  }
+
+  // Get or create transcript accumulator for current video
+  private static getTranscriptAccumulator(videoId: string): {
+    segments: Set<string>
+    lastUpdate: number
+    isComplete: boolean
+  } {
+    if (!this.transcriptAccumulator.has(videoId)) {
+      this.transcriptAccumulator.set(videoId, {
+        segments: new Set<string>(),
+        lastUpdate: Date.now(),
+        isComplete: false
+      })
+    }
+    return this.transcriptAccumulator.get(videoId)!
+  }
+
+  // Start transcript monitoring for a video
+  static startTranscriptMonitoring(videoId: string): void {
+    this.cleanupOldTranscripts()
+    
+    const accumulator = this.getTranscriptAccumulator(videoId)
+    
+    // Set up mutation observer to watch for caption changes
+    const observer = new MutationObserver(() => {
+      this.updateTranscriptFromCaptions(videoId)
+    })
+
+    // Watch the caption container for changes
+    const captionContainer = document.querySelector('.ytp-caption-window-container, .captions-text, [class*="caption"]')
+    if (captionContainer) {
+      observer.observe(captionContainer, {
+        childList: true,
+        subtree: true,
+        characterData: true
+      })
+      
+      console.log(`[VideoExtractor] 🎤 Started transcript monitoring for video ${videoId.substring(0, 8)}...`)
+    }
+
+    // Also check periodically in case mutation observer misses updates
+    const intervalId = setInterval(() => {
+      this.updateTranscriptFromCaptions(videoId)
+      
+      // Stop monitoring after video changes or 5 minutes
+      if (!window.location.href.includes(videoId) || Date.now() - accumulator.lastUpdate > 5 * 60 * 1000) {
+        clearInterval(intervalId)
+        observer.disconnect()
+        console.log(`[VideoExtractor] ⏹️ Stopped transcript monitoring for video ${videoId.substring(0, 8)}...`)
+      }
+    }, 2000) // Check every 2 seconds
+
+    // Initial update
+    this.updateTranscriptFromCaptions(videoId)
+  }
+
+  // Update transcript from current captions
+  private static updateTranscriptFromCaptions(videoId: string): void {
+    const accumulator = this.getTranscriptAccumulator(videoId)
+    
+    try {
+      // Get current caption segments
+      const captionElements = document.querySelectorAll('span.ytp-caption-segment')
+      
+      if (captionElements.length > 0) {
+        let newSegmentsAdded = false
+        
+        captionElements.forEach(element => {
+          const text = element.textContent?.trim()
+          if (text && text.length > 0 && !accumulator.segments.has(text)) {
+            accumulator.segments.add(text)
+            newSegmentsAdded = true
+          }
+        })
+        
+        if (newSegmentsAdded) {
+          accumulator.lastUpdate = Date.now()
+          console.log(`[VideoExtractor] 📝 Added new caption segments. Total: ${accumulator.segments.size}`)
+        }
+      }
+      
+      // Check if video ended or paused to mark transcript as complete
+      const videoElement = document.querySelector('video')
+      if (videoElement) {
+        if (videoElement.ended || videoElement.currentTime >= videoElement.duration - 1) {
+          accumulator.isComplete = true
+          console.log(`[VideoExtractor] ✅ Transcript complete for video ${videoId.substring(0, 8)}... (${accumulator.segments.size} segments)`)
+        }
+      }
+      
+    } catch (error) {
+      console.error('[VideoExtractor] Error updating transcript:', error)
+    }
+  }
+
+  // Get accumulated transcript for a video
+  static getAccumulatedTranscript(videoId: string): string | null {
+    const accumulator = this.transcriptAccumulator.get(videoId)
+    
+    if (!accumulator || accumulator.segments.size === 0) {
+      return null
+    }
+    
+    // Convert set to array and join
+    const transcript = Array.from(accumulator.segments).join(' ')
+    
+    console.log(`[VideoExtractor] 📜 Retrieved accumulated transcript: ${accumulator.segments.size} segments, ${transcript.length} chars, ${accumulator.isComplete ? 'complete' : 'in progress'}`)
+    
+    return transcript
+  }
   static extractYouTubeShorts(): VideoData | null {
     try {
       console.log('🎬 ═══════════════════════════════════════════════')
       console.log('📍 NEW SHORT:', window.location.href.split('/shorts/')[1]?.substring(0, 10) + '...')
+      
+      // Extract video ID early for transcript monitoring
+      const videoId = this.extractVideoId(window.location.href, 'youtube')
       
       // Extract title
       const titleSelectors = [
@@ -117,8 +248,18 @@ export class VideoExtractor {
         }
       }
       
-      // Extract transcript
-      const transcript = this.extractYouTubeTranscript()
+      // Extract transcript with accumulation
+      // Start transcript monitoring if not already started
+      this.startTranscriptMonitoring(videoId)
+      
+      // Get both immediate and accumulated transcript
+      const immediateTranscript = this.extractYouTubeTranscript()
+      const accumulatedTranscript = this.getAccumulatedTranscript(videoId)
+      
+      // Use accumulated transcript if available and longer, otherwise use immediate
+      const transcript = accumulatedTranscript && accumulatedTranscript.length > (immediateTranscript?.length || 0) 
+        ? accumulatedTranscript 
+        : immediateTranscript
       
       // Extract description (already extracted above)
       // const description = this.extractYouTubeDescription()
@@ -149,7 +290,16 @@ export class VideoExtractor {
       // Clean, compact logging
       console.log('📝 TITLE:', title ? `"${title}"` : '❌ None')
       console.log('👤 AUTHOR:', author ? `"${author}"` : '❌ None')
-      console.log('🎤 TRANSCRIPT:', transcript ? `"${transcript.substring(0, 100)}${transcript.length > 100 ? '...' : ''}" (${transcript.length} chars)` : '❌ None')
+      
+      // Enhanced transcript logging
+      if (transcript) {
+        const isAccumulated = accumulatedTranscript && accumulatedTranscript.length > (immediateTranscript?.length || 0)
+        const transcriptType = isAccumulated ? 'ACCUMULATED' : 'IMMEDIATE'
+        console.log('🎤 TRANSCRIPT:', `"${transcript.substring(0, 100)}${transcript.length > 100 ? '...' : ''}" (${transcript.length} chars, ${transcriptType})`)
+      } else {
+        console.log('🎤 TRANSCRIPT:', '❌ None')
+      }
+      
       console.log('⏱️  DURATION:', duration > 0 ? `${duration.toFixed(1)}s` : '❌ Unknown')
       console.log('📊 QUALITY:', extractionQuality.toUpperCase())
       console.log('═══════════════════════════════════════════════')
@@ -161,7 +311,7 @@ export class VideoExtractor {
         author,
         url: window.location.href,
         timestamp: Date.now(),
-        id: this.extractVideoId(window.location.href, 'youtube'),
+        id: videoId,
         transcript,
         duration,
         hasAudio,
