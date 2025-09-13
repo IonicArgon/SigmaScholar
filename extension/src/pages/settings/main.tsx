@@ -4,12 +4,24 @@ import { AuthProvider } from '@/contexts/AuthContext'
 import SettingsApp from './SettingsApp.tsx'
 import './settings.css'
 
-const root = ReactDOM.createRoot(document.getElementById('root')!)
+console.log('Settings main.tsx loading...')
 
-root.render(
-  <React.StrictMode>
-    <AuthProvider>
-      <SettingsApp />
-    </AuthProvider>
-  </React.StrictMode>
-)
+const rootElement = document.getElementById('root')
+console.log('Root element found:', !!rootElement)
+
+if (!rootElement) {
+  console.error('Root element not found!')
+  document.body.innerHTML = '<div style="padding: 20px; color: red;">Error: Root element not found</div>'
+} else {
+  const root = ReactDOM.createRoot(rootElement)
+  
+  console.log('Rendering SettingsApp...')
+  
+  root.render(
+    <React.StrictMode>
+      <AuthProvider>
+        <SettingsApp />
+      </AuthProvider>
+    </React.StrictMode>
+  )
+}

@@ -1,10 +1,13 @@
 
 /* Modern Home Page Styles */
 .home-container {
-  padding: 24px;
-  max-width: 400px;
-  margin: 0 auto;
+  padding: 16px;
+  width: 100%;
+  max-width: none;
+  margin: 0;
   animation: fadeIn var(--transition-normal);
+  min-height: 100vh;
+  box-sizing: border-box;
 }
 
 /* Header Section */

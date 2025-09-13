@@ -57,6 +57,7 @@ Requirements:
 3. Use both document context and YouTube JSON context to create relevant questions
 4. Always return valid JSON format
 5. Include explanations for all answers
+6. Wrong answers should not be explicitly marked or easily guessable
 
 JSON Response Format:
 {
@@ -99,7 +100,7 @@ YOUTUBE VIDEO CONTEXT (JSON):
 {
   "title": "Cat Videos Compilation #47 - Funny Cats Being Derps",
   "description": "Watch these hilarious cats being absolute chaos agents for 10 minutes straight",
-  "channelName": "CatMemesCentral",
+  "author": "@CatMemesCentral",
   "transcript": "Look at this orange cat just... existing. Why are cats like this? This one's trying to fit in a box that's clearly too small but refuses to give up..."
 }`
         },
@@ -109,18 +110,18 @@ YOUTUBE VIDEO CONTEXT (JSON):
   "question": "Just like that orange cat trying to squeeze into an impossibly small box, what happens when the discriminant b² - 4ac in the quadratic formula is negative?",
   "type": "multiple_choice",
   "options": [
-    "The equation has no real solutions, only complex solutions (like the cat's logic)",
     "The equation has exactly one real solution",
     "The equation has two distinct real solutions",
+    "The equation has no real solutions, only complex solutions (like the cat's logic)",
     "The quadratic formula breaks down completely"
   ],
-  "correctAnswer": 0,
+  "correctAnswer": 2,
   "explanations": {
     "correct": "When the discriminant is negative, just like that stubborn cat refusing to accept reality, the equation produces complex (imaginary) solutions instead of real ones. The math still works, it's just living in imagination land!",
     "incorrect": [
-      "",
       "One real solution happens when the discriminant equals zero - that's when the cat actually fits perfectly in the box",
       "Two real solutions occur when the discriminant is positive - like having multiple boxes that actually fit the cat",
+      "",
       "The quadratic formula never breaks down, it just gets creative with complex numbers when reality doesn't cooperate"
     ]
   }
@@ -137,7 +138,7 @@ YOUTUBE VIDEO CONTEXT (JSON):
 {
   "title": "Epic Fail Compilation - People Falling Down for 10 Minutes Straight",
   "description": "The funniest fails and tumbles caught on camera. You'll laugh until you cry!",
-  "channelName": "FailArmy",
+  "author": "@FailArmy",
   "transcript": "Oh no! Watch this guy try to jump over a fence and... NOPE! And here's someone slipping on ice, classic! Why do people think they can parkour when they can barely walk?"
 }`
         },
@@ -175,7 +176,7 @@ YOUTUBE VIDEO CONTEXT (JSON):
 {
   "title": "MrBeast Ranks Historical Art Movements from WORST to BEST",
   "description": "I spent $100,000 hiring art experts to rank every major art movement in history. You won't believe what came in last place!",
-  "channelName": "MrBeast",
+  "author": "@MrBeast",
   "transcript": "Alright guys, today we're ranking art movements and I've got some serious art historians here. Renaissance is looking pretty good so far, but wait until you see what happens when we get to modern art..."
 }`
         },
@@ -185,19 +186,19 @@ YOUTUBE VIDEO CONTEXT (JSON):
   "question": "MrBeast just ranked the Renaissance pretty high on his list, but what made Renaissance artists like Leonardo da Vinci absolutely DOMINATE the art game compared to medieval artists?",
   "type": "multiple_choice",
   "options": [
-    "They combined artistic skills with scientific observation (the ultimate content creator strategy)",
     "They just painted faster and uploaded more frequently",
     "They used more expensive materials (pay-to-win strategy)",
-    "They only painted rich people for better sponsorship deals"
+    "They only painted rich people for better sponsorship deals",
+    "They combined artistic skills with scientific observation (the ultimate content creator strategy)"
   ],
-  "correctAnswer": 0,
+  "correctAnswer": 3,
   "explanations": {
     "correct": "Just like MrBeast combines entertainment with genuine value, Renaissance artists mixed artistic talent with scientific study - dissecting bodies, studying light physics, and mastering perspective. This combo made their content (art) way more realistic and engaging than medieval artists who stuck to flat, symbolic styles.",
     "incorrect": [
-      "",
       "Speed and quantity don't automatically equal quality - even MrBeast spends months planning his videos for maximum impact",
       "Expensive materials alone don't make great art, just like expensive cameras don't automatically make great YouTube videos",
-      "While patronage helped, the real game-changer was their innovative techniques and scientific approach to creating realistic art"
+      "While patronage helped, the real game-changer was their innovative techniques and scientific approach to creating realistic art",
+      ""
     ]
   }
 }`
@@ -207,8 +208,8 @@ YOUTUBE VIDEO CONTEXT (JSON):
           content: userPrompt
         }
       ],
-      maxTokens: 2000,
-      temperature: 0.3
+      maxTokens: 2500,
+      temperature: 0.5
     })
     
     // Extract and parse the JSON response
