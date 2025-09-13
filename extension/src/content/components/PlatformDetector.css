@@ -210,13 +210,19 @@
 }
 
 /* Processing Indicator */
-.processing-indicator {
-  margin-top: 12px;
-  padding: 12px 16px;
-  background: hsl(var(--primary) / 0.1);
-  border: 1px solid hsl(var(--primary) / 0.2);
-  border-radius: 8px;
-  text-align: center;
+.sigma-scholar-processing-indicator {
+  margin-top: 12px !important;
+  padding: 12px 16px !important;
+  background: rgba(59, 130, 246, 0.1) !important;
+  border: 1px solid rgba(59, 130, 246, 0.2) !important;
+  border-radius: 8px !important;
+  text-align: center !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  margin-bottom: 0 !important;
+  box-sizing: border-box !important;
+  color: #171717 !important;
+  font-size: 13px !important;
   animation: fadeIn var(--transition-normal);
 }
 
