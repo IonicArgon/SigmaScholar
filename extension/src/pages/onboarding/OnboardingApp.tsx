@@ -74,11 +74,35 @@ const OnboardingApp: React.FC = () => {
       return subject
     })
     setSubjects(updatedSubjects)
-    localStorage.setItem('sigma_subjects', JSON.stringify(updatedSubjects))
     
-    // Also store files separately for easy access
-    const allFiles = updatedSubjects.flatMap(s => s.files.map(f => ({...f, subjectName: s.name})))
-    localStorage.setItem('sigma_files', JSON.stringify(allFiles))
+    // Store only metadata in localStorage, not the actual file data
+    const subjectsMetadata = updatedSubjects.map(subject => ({
+      id: subject.id,
+      name: subject.name,
+      files: subject.files.map(file => ({
+        name: file.name,
+        size: file.size,
+        type: file.type
+        // Don't store 'data' field to avoid quota issues
+      }))
+    }))
+    
+    localStorage.setItem('sigma_subjects', JSON.stringify(subjectsMetadata))
+    
+    // Store files separately with size limit check
+    try {
+      const allFiles = updatedSubjects.flatMap(s => s.files.map(f => ({
+        name: f.name,
+        size: f.size,
+        type: f.type,
+        subjectName: s.name
+        // Don't store 'data' field here either
+      })))
+      localStorage.setItem('sigma_files', JSON.stringify(allFiles))
+    } catch (storageError) {
+      console.warn('Could not save files to localStorage due to quota:', storageError)
+      // Continue without localStorage backup - the backend will handle the files
+    }
   }
 
   const completeOnboardingFlow = async () => {
@@ -88,24 +112,52 @@ const OnboardingApp: React.FC = () => {
     }
 
     try {
-      // Call Firebase Function to complete onboarding
+      // First, ensure user is initialized in the backend
+      const { initializeUserTransactional } = await import('@/lib/functions')
+      
+      try {
+        await initializeUserTransactional()
+        console.log('User initialized successfully')
+      } catch (initError) {
+        console.log('User might already be initialized:', initError)
+        // Continue anyway as user might already exist
+      }
+
+      // Then complete onboarding - the backend handles file storage
       const result = await completeOnboardingTransactional({
         subjects: subjects.map(subject => ({
           name: subject.name,
-          files: subject.files
+          files: subject.files // Send full file data to backend
         }))
       })
 
       console.log('Onboarding completed:', result.data)
       
-      // Keep localStorage as fallback
+      // Only store minimal data in localStorage
       localStorage.setItem('sigma_onboarded', 'true')
-      localStorage.setItem('sigma_subjects', JSON.stringify(subjects))
+      
+      // Store only subject names and file metadata (without data)
+      const subjectsMetadata = subjects.map(subject => ({
+        id: subject.id,
+        name: subject.name,
+        files: subject.files.map(file => ({
+          name: file.name,
+          size: file.size,
+          type: file.type
+        }))
+      }))
+      
+      try {
+        localStorage.setItem('sigma_subjects', JSON.stringify(subjectsMetadata))
+      } catch (storageError) {
+        console.warn('Could not save subjects to localStorage:', storageError)
+        // Continue anyway - the backend has the data
+      }
       
       // Send message to background script
       chrome.runtime.sendMessage({
         type: 'ONBOARDING_COMPLETE',
-        subjects: subjects,
+        subjects: subjectsMetadata, // Send metadata only
         userId: user.uid,
         backendResult: result.data
       })
@@ -114,7 +166,35 @@ const OnboardingApp: React.FC = () => {
       window.close()
     } catch (error) {
       console.error('Failed to complete onboarding:', error)
-      alert('Failed to save onboarding data. Please try again.')
+      
+      // Provide more specific error information
+      let errorMessage = 'Failed to save onboarding data. Please try again.'
+      if (error instanceof Error) {
+        if (error.message.includes('quota')) {
+          errorMessage = 'Files are too large for local storage. They will be saved to the cloud instead.'
+          // Continue with cloud-only storage
+          try {
+            const result = await completeOnboardingTransactional({
+              subjects: subjects.map(subject => ({
+                name: subject.name,
+                files: subject.files
+              }))
+            })
+            
+            if (result.data) {
+              localStorage.setItem('sigma_onboarded', 'true')
+              window.close()
+              return
+            }
+          } catch (cloudError) {
+            errorMessage = `Error: ${cloudError instanceof Error ? cloudError.message : 'Cloud storage failed'}`
+          }
+        } else {
+          errorMessage = `Error: ${error.message}`
+        }
+      }
+      
+      alert(errorMessage)
     }
   }
 
