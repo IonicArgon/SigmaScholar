@@ -1,5 +1,6 @@
 import Logo from '@/assets/crx.svg'
 import { useState, useEffect } from 'react'
+import FullscreenOverlay from './FullscreenOverlay'
 import './PlatformDetector.css'
 
 type Platform = 'youtube-shorts' | 'instagram-reels' | 'tiktok' | 'other'
@@ -12,6 +13,9 @@ export default function PlatformDetector({ onPlatformDetected }: PlatformDetecto
   const [show, setShow] = useState(false)
   const [platform, setPlatform] = useState<Platform>('other')
   const [isDetected, setIsDetected] = useState(false)
+  const [viewCount, setViewCount] = useState(0)
+  const [showOverlay, setShowOverlay] = useState(false)
+  const [lastUrl, setLastUrl] = useState('')
   
   const toggle = () => setShow(!show)
 
@@ -43,11 +47,32 @@ export default function PlatformDetector({ onPlatformDetected }: PlatformDetecto
   useEffect(() => {
     const checkPlatform = () => {
       const detectedPlatform = detectPlatform()
+      const currentUrl = window.location.href
+      
       setPlatform(detectedPlatform)
       setIsDetected(detectedPlatform !== 'other')
       
+      // Track view count when URL changes on supported platforms
+      if (detectedPlatform !== 'other' && currentUrl !== lastUrl && lastUrl !== '') {
+        setViewCount(prev => {
+          const newCount = prev + 1
+          console.log(`🔢 SigmaScholar: View count updated: ${newCount}`)
+          console.log(`📍 URL changed from: ${lastUrl}`)
+          console.log(`📍 URL changed to: ${currentUrl}`)
+          
+          // Show overlay every 5 videos
+          if (newCount > 0 && newCount % 5 === 0) {
+            console.log(`🚨 SigmaScholar: Triggering overlay at ${newCount} views`)
+            setShowOverlay(true)
+          }
+          return newCount
+        })
+      }
+      
+      setLastUrl(currentUrl)
+      
       if (detectedPlatform !== 'other') {
-        console.log(`SigmaScholar: Detected ${detectedPlatform}`, window.location.href)
+        console.log(`SigmaScholar: Detected ${detectedPlatform}`, currentUrl)
         onPlatformDetected?.(detectedPlatform)
       }
     }
@@ -119,29 +144,49 @@ export default function PlatformDetector({ onPlatformDetected }: PlatformDetecto
 
   const platformInfo = getPlatformInfo()
 
+  const handleContinueWatching = () => {
+    setShowOverlay(false)
+  }
+
+  const handleManualTrigger = () => {
+    setShowOverlay(true)
+  }
+
   return (
-    <div className="platform-detector">
-      {show && (
-        <div className={`platform-popup ${show ? 'opacity-100' : 'opacity-0'}`}>
-          <h3 style={{ color: platformInfo.color }}>📱 {platformInfo.name} Detected!</h3>
-          <p>SigmaScholar is ready to help with your research.</p>
-          <div className="platform-actions">
-            <button className="action-btn">📚 Save for Research</button>
-            <button className="action-btn">🏷️ Add Tags</button>
-            <button className="action-btn">📝 Take Notes</button>
+    <>
+      <FullscreenOverlay
+        isVisible={showOverlay}
+        onContinue={handleContinueWatching}
+        platform={platform}
+        viewCount={viewCount}
+      />
+      
+      <div className="platform-detector">
+        {show && (
+          <div className={`platform-popup ${show ? 'opacity-100' : 'opacity-0'}`}>
+            <h3 style={{ color: platformInfo.color }}>📱 {platformInfo.name} Detected!</h3>
+            <p>SigmaScholar is ready to help with your research.</p>
+            <div className="platform-actions">
+              <button className="action-btn">📚 Save for Research</button>
+              <button className="action-btn">🏷️ Add Tags</button>
+              <button className="action-btn">📝 Take Notes</button>
+              <button className="action-btn" onClick={handleManualTrigger}>
+                🧠 Learning Break ({viewCount} viewed)
+              </button>
+            </div>
           </div>
-        </div>
-      )}
-      <button 
-        className="platform-toggle-button" 
-        onClick={toggle}
-        style={{ borderColor: platformInfo.color }}
-      >
-        <img src={Logo} alt="SigmaScholar" className="button-icon" />
-        <span className="platform-badge" style={{ backgroundColor: platformInfo.color }}>
-          {platform === 'youtube-shorts' ? '▶️' : platform === 'instagram-reels' ? '📸' : '🎵'}
-        </span>
-      </button>
-    </div>
+        )}
+        <button 
+          className="platform-toggle-button" 
+          onClick={toggle}
+          style={{ borderColor: platformInfo.color }}
+        >
+          <img src={Logo} alt="SigmaScholar" className="button-icon" />
+          <span className="platform-badge" style={{ backgroundColor: platformInfo.color }}>
+            {platform === 'youtube-shorts' ? '▶️' : platform === 'instagram-reels' ? '📸' : '🎵'}
+          </span>
+        </button>
+      </div>
+    </>
   )
 }
