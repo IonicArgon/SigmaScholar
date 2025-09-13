@@ -18,7 +18,7 @@ export default function HomePage() {
     <div className="home-container">
       <div className="home-header">
         <div className="user-info">
-          <div className="user-avatar">
+          <div className="user-avatar hover-meme-giga-chad">
             {(user?.displayName || 'Σ').charAt(0).toUpperCase()}
           </div>
           <div className="user-details">
@@ -26,22 +26,22 @@ export default function HomePage() {
             <div className="user-email">{user?.email}</div>
           </div>
         </div>
-        <button onClick={handleSignOut} className="sign-out-button">
+        <button onClick={handleSignOut} className="sign-out-button hover-meme-shake">
           Touch Grass 🌱
         </button>
       </div>
 
       <div className="home-content">
-        <h3>Σ SigmaScholar Command Center 💪</h3>
-        <p className="home-subtitle">Your based study grindset companion 🧠✨</p>
+        <h3 className="hover-meme-rainbow">Σ SigmaScholar Command Center 💪</h3>
+        <p className="home-subtitle animate-meme-wobble">Your based study grindset companion 🧠✨</p>
         
         {profile?.subjects && profile.subjects.length > 0 ? (
           <div className="subjects-overview">
             <h4>Your Grindset Subjects 🔥</h4>
             <div className="subjects-grid">
               {profile.subjects.map((subject, index) => (
-                <div key={index} className="subject-card">
-                  <h5>{subject.name}</h5>
+                <div key={index} className="subject-card hover-meme-wobble">
+                  <h5 className="animate-meme-pulse-glow">{subject.name}</h5>
                   <p>Ready to absolutely demolish this 💯</p>
                   <div className="subject-stats">
                     <div className="subject-stat">
