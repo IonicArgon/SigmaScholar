@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
-import { completeOnboarding } from '@/lib/functions'
+import { completeOnboardingTransactional } from '@/lib/functions'
 
 interface Subject {
   id: string
@@ -89,7 +89,7 @@ const OnboardingApp: React.FC = () => {
 
     try {
       // Call Firebase Function to complete onboarding
-      const result = await completeOnboarding({
+      const result = await completeOnboardingTransactional({
         subjects: subjects.map(subject => ({
           name: subject.name,
           files: subject.files

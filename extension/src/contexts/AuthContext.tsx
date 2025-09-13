@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { User, onAuthStateChanged } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
-import { initializeUser } from '@/lib/functions'
+import { initializeUserTransactional } from '@/lib/functions'
 
 interface Subject {
   id: string
@@ -82,7 +82,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           } else {
             // User is not onboarded, initialize in backend
             try {
-              const result = await initializeUser()
+              const result = await initializeUserTransactional()
               console.log('User initialized in backend:', result.data)
             } catch (error) {
               console.warn('Failed to initialize user in backend:', error)
