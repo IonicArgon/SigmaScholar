@@ -106,6 +106,83 @@ body {
   }
 }
 
+/* MEME-WORTHY ANIMATIONS */
+@keyframes memeWobble {
+  0% { transform: rotate(0deg) scale(1); }
+  15% { transform: rotate(-5deg) scale(1.05); }
+  30% { transform: rotate(3deg) scale(0.95); }
+  45% { transform: rotate(-3deg) scale(1.02); }
+  60% { transform: rotate(2deg) scale(0.98); }
+  75% { transform: rotate(-1deg) scale(1.01); }
+  100% { transform: rotate(0deg) scale(1); }
+}
+
+@keyframes memeBounce {
+  0%, 20%, 53%, 80%, 100% {
+    transform: translateY(0) scale(1);
+  }
+  40%, 43% {
+    transform: translateY(-30px) scale(1.1) rotate(5deg);
+  }
+  70% {
+    transform: translateY(-15px) scale(1.05) rotate(-2deg);
+  }
+  90% {
+    transform: translateY(-5px) scale(1.02) rotate(1deg);
+  }
+}
+
+@keyframes memeShake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-10px) rotate(-1deg); }
+  20%, 40%, 60%, 80% { transform: translateX(10px) rotate(1deg); }
+}
+
+@keyframes memeRainbow {
+  0% { filter: hue-rotate(0deg) saturate(1); }
+  25% { filter: hue-rotate(90deg) saturate(1.5); }
+  50% { filter: hue-rotate(180deg) saturate(2); }
+  75% { filter: hue-rotate(270deg) saturate(1.5); }
+  100% { filter: hue-rotate(360deg) saturate(1); }
+}
+
+@keyframes memeGigaChad {
+  0% { transform: scale(1) rotate(0deg); filter: brightness(1); }
+  25% { transform: scale(1.2) rotate(2deg); filter: brightness(1.2) contrast(1.1); }
+  50% { transform: scale(1.3) rotate(-1deg); filter: brightness(1.3) contrast(1.2) saturate(1.2); }
+  75% { transform: scale(1.1) rotate(1deg); filter: brightness(1.1) contrast(1.05); }
+  100% { transform: scale(1) rotate(0deg); filter: brightness(1); }
+}
+
+@keyframes memePulseGlow {
+  0% {
+    box-shadow: 0 0 5px hsl(var(--primary) / 0.5),
+                0 0 10px hsl(var(--primary) / 0.3),
+                0 0 15px hsl(var(--primary) / 0.2);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.8),
+                0 0 30px hsl(var(--accent) / 0.6),
+                0 0 40px hsl(var(--secondary) / 0.4);
+    transform: scale(1.05);
+  }
+  100% {
+    box-shadow: 0 0 5px hsl(var(--primary) / 0.5),
+                0 0 10px hsl(var(--primary) / 0.3),
+                0 0 15px hsl(var(--primary) / 0.2);
+    transform: scale(1);
+  }
+}
+
+@keyframes memeSpinZoom {
+  0% { transform: rotate(0deg) scale(1); }
+  25% { transform: rotate(90deg) scale(1.2); }
+  50% { transform: rotate(180deg) scale(0.8); }
+  75% { transform: rotate(270deg) scale(1.1); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+
 @keyframes bounce {
   0%, 20%, 53%, 80%, 100% {
     transform: translateY(0);
@@ -155,8 +232,55 @@ body {
   animation: scaleIn var(--transition-fast);
 }
 
+/* MEME ANIMATION CLASSES */
 .animate-bounce {
   animation: bounce 1s infinite;
+}
+
+.animate-meme-wobble {
+  animation: memeWobble 0.8s ease-in-out;
+}
+
+.animate-meme-bounce {
+  animation: memeBounce 1.2s infinite;
+}
+
+.animate-meme-shake {
+  animation: memeShake 0.5s ease-in-out;
+}
+
+.animate-meme-rainbow {
+  animation: memeRainbow 2s infinite;
+}
+
+.animate-meme-giga-chad {
+  animation: memeGigaChad 1.5s ease-in-out;
+}
+
+.animate-meme-pulse-glow {
+  animation: memePulseGlow 1.5s infinite;
+}
+
+.animate-meme-spin-zoom {
+  animation: memeSpinZoom 1s ease-in-out;
+}
+
+/* HOVER MEME EFFECTS */
+.hover-meme-wobble:hover {
+  animation: memeWobble 0.6s ease-in-out;
+}
+
+.hover-meme-shake:hover {
+  animation: memeShake 0.3s ease-in-out;
+}
+
+.hover-meme-giga-chad:hover {
+  animation: memeGigaChad 1s ease-in-out;
+  cursor: pointer;
+}
+
+.hover-meme-rainbow:hover {
+  animation: memeRainbow 1s infinite;
 }
 
 .animate-pulse {
