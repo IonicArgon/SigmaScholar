@@ -244,6 +244,7 @@ export const processDocument = onMessagePublished({
   }
 })
 
+
 /**
  * HTTP callable function to trigger document processing
  */
