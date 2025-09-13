@@ -15,10 +15,14 @@ export default defineManifest({
     default_popup: 'src/popup/index.html',
   },
   permissions: [
+    'identity',
     'contentSettings',
   ],
   content_scripts: [{
     js: ['src/content/main.tsx'],
     matches: ['https://*/*'],
   }],
+  content_security_policy: {
+    extension_pages: "script-src 'self'; object-src 'self'; connect-src 'self' ws://localhost:* http://localhost:* https://apis.google.com https://www.gstatic.com https://www.googleapis.com https://securetoken.googleapis.com;"
+  },
 })
