@@ -167,19 +167,24 @@
   animation: none !important;
 }
 
-.platform-toggle-button:active {
-  transform: translateY(0) scale(0.98);
+.sigma-scholar-platform-toggle-button:active {
+  transform: translateY(0) scale(0.98) !important;
 }
 
-.button-icon {
-  width: 28px;
-  height: 28px;
-  filter: brightness(0) invert(1);
-  transition: transform var(--transition-fast);
+.sigma-scholar-button-icon {
+  width: 28px !important;
+  height: 28px !important;
+  filter: brightness(0) invert(1) !important;
+  transition: transform 150ms ease-out !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  background: none !important;
+  box-sizing: border-box !important;
 }
 
-.platform-toggle-button:hover .button-icon {
-  transform: rotate(5deg) scale(1.1);
+.sigma-scholar-platform-toggle-button:hover .sigma-scholar-button-icon {
+  transform: rotate(5deg) scale(1.1) !important;
 }
 
 /* Platform Badge */
