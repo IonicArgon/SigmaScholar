@@ -1,18 +1,42 @@
 import { onCall } from 'firebase-functions/v2/https'
-import { defineSecret } from 'firebase-functions/params'
 import * as admin from 'firebase-admin'
-import { getUsersCollection } from '../lib/mongodb'
-import { Subject, OnboardingData, FileMetadata } from '../types/user'
+import { getFirestore } from 'firebase-admin/firestore'
 
-// Define MongoDB secret
-const mongodbUri = defineSecret('MONGODB_URI');
+// Initialize Firestore
+const db = getFirestore()
+
+// Types
+interface FileData {
+  name: string
+  size: number
+  type: string
+  data: string // base64 data URL
+}
+
+interface SubjectData {
+  name: string
+  files: FileData[]
+}
+
+interface OnboardingData {
+  subjects: SubjectData[]
+}
+
+interface FileMetadata {
+  fileName: string
+  originalName: string
+  fileSize: number
+  mimeType: string
+  storagePath: string
+  downloadUrl?: string
+  uploadedAt: Date
+  processingStatus: 'pending' | 'completed' | 'failed'
+}
 
 /**
  * Complete user onboarding with subjects and file metadata
  */
-export const completeOnboarding = onCall<OnboardingData>({
-  secrets: [mongodbUri],
-}, async (request) => {
+export const completeOnboarding = onCall<OnboardingData>({}, async (request) => {
   const { auth, data } = request
   
   if (!auth) {
@@ -25,20 +49,38 @@ export const completeOnboarding = onCall<OnboardingData>({
   console.log(`[completeOnboarding] Called for UID: ${uid}, subjects count: ${subjects.length}`)
   
   try {
-    const usersCollection = await getUsersCollection()
+    // Check if user exists in Firestore
+    const userRef = db.collection('users').doc(uid)
+    const userDoc = await userRef.get()
     
-    // Find the user document to update
-    const existingUser = await usersCollection.findOne({ firebaseUid: uid })
-    if (!existingUser) {
-      console.error(`[completeOnboarding] No user found for UID: ${uid}`)
-      throw new Error('User not found. Please initialize user first.')
+    if (!userDoc.exists) {
+      // Create user if doesn't exist
+      await userRef.set({
+        firebaseUid: uid,
+        displayName: auth.token.name || 'User',
+        email: auth.token.email || '',
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        isOnboarded: false
+      })
     }
     
-    console.log(`[completeOnboarding] Found user with _id: ${existingUser._id}, displayName: ${existingUser.profile.displayName}`)
+    // Upload files to Firebase Storage and create subjects in Firestore
+    const batch = db.batch()
     
-    // Upload files to Firebase Storage and create embedded subjects with file metadata
-    const subjectDocs: Subject[] = await Promise.all(subjects.map(async (subject) => {
-      const files: FileMetadata[] = await Promise.all(subject.files.map(async (file) => {
+    for (const subject of subjects) {
+      // Create subject document
+      const subjectRef = db.collection('subjects').doc()
+      const subjectData = {
+        userId: uid,
+        name: subject.name,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        fileCount: subject.files.length
+      }
+      batch.set(subjectRef, subjectData)
+      
+      // Upload files and create file documents
+      for (const file of subject.files) {
         // Generate unique filename to prevent conflicts
         const timestamp = Date.now()
         const sanitizedSubjectName = subject.name.replace(/[^a-zA-Z0-9]/g, '_')
@@ -47,6 +89,8 @@ export const completeOnboarding = onCall<OnboardingData>({
         
         // Define storage path: users/{uid}/subjects/{subjectName}/{uniqueFileName}
         const storagePath = `users/${uid}/subjects/${sanitizedSubjectName}/${uniqueFileName}`
+        
+        let fileMetadata: FileMetadata
         
         try {
           // Convert base64 data URL to buffer
@@ -74,7 +118,7 @@ export const completeOnboarding = onCall<OnboardingData>({
           
           console.log(`[completeOnboarding] Uploaded file: ${storagePath}`)
           
-          return {
+          fileMetadata = {
             fileName: uniqueFileName,
             originalName: file.name,
             fileSize: file.size,
@@ -86,7 +130,7 @@ export const completeOnboarding = onCall<OnboardingData>({
           }
         } catch (error) {
           console.error(`[completeOnboarding] Failed to upload file ${file.name}:`, error)
-          return {
+          fileMetadata = {
             fileName: uniqueFileName,
             originalName: file.name,
             fileSize: file.size,
@@ -96,30 +140,28 @@ export const completeOnboarding = onCall<OnboardingData>({
             processingStatus: 'failed' as const
           }
         }
-      }))
-      
-      return {
-        name: subject.name,
-        createdAt: new Date(),
-        fileCount: subject.files.length,
-        files: files
-      }
-    }))
-    
-    // Update user with onboarding status and embedded subjects
-    const updateResult = await usersCollection.updateOne(
-      { firebaseUid: uid },
-      {
-        $set: {
-          'profile.isOnboarded': true,
-          'profile.updatedAt': new Date(),
-          subjects: subjectDocs
+        
+        // Create file document in Firestore
+        const fileRef = db.collection('files').doc()
+        const fileData = {
+          userId: uid,
+          subjectId: subjectRef.id,
+          subjectName: subject.name,
+          ...fileMetadata
         }
-      },
-      { upsert: true } // Create if doesn't exist
-    )
+        batch.set(fileRef, fileData)
+      }
+    }
     
-    console.log('Update result:', { matchedCount: updateResult.matchedCount, modifiedCount: updateResult.modifiedCount, upsertedCount: updateResult.upsertedCount })
+    // Update user with onboarding status
+    batch.update(userRef, {
+      isOnboarded: true,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    })
+    
+    // Commit all changes
+    await batch.commit()
+    console.log(`[completeOnboarding] Successfully created ${subjects.length} subjects with files`)
     
     // Set custom claim for onboarding completion
     await admin.auth().setCustomUserClaims(uid, { isOnboarded: true })
@@ -127,7 +169,7 @@ export const completeOnboarding = onCall<OnboardingData>({
     return {
       success: true,
       message: 'Onboarding completed successfully',
-      subjectsCreated: subjectDocs.length,
+      subjectsCreated: subjects.length,
       isOnboarded: true
     }
   } catch (error) {

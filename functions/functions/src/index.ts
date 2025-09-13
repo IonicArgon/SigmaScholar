@@ -21,15 +21,9 @@ if (!admin.apps.length) {
   }
 }
 
-// Export all functions
-export { initializeUser, updateUserProfile, getUserData } from './functions/user-profile'
+// Export core functions only
 export { completeOnboarding } from './functions/onboarding'
-export { addSubject, removeSubject } from './functions/subject-management'
 export { addFilesToSubject, removeFileFromSubject } from './functions/file-management'
-export { onFileUploaded, onFileDeleted } from './functions/storage-triggers'
-export { processFileContent } from './functions/file-processing'
-export { cleanupOrphanedUsers, validateUserState } from './functions/user-cleanup'
-export { initializeUserTransactional, completeOnboardingTransactional } from './functions/transactional-user'
 
 // For cost control, you can set the maximum number of containers that can be
 // running at the same time. This helps mitigate the impact of unexpected
