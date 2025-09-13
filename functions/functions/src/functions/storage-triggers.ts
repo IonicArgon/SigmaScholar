@@ -1,6 +1,10 @@
 import { onObjectFinalized, onObjectDeleted } from 'firebase-functions/v2/storage';
+import { defineSecret } from 'firebase-functions/params';
 import { getUsersCollection } from '../lib/mongodb';
 import { storage, functions } from '../lib/firebase';
+
+// Define MongoDB secret
+const mongodbUri = defineSecret('MONGODB_URI');
 
 interface FileProcessingTask {
   userId: string;
@@ -13,7 +17,9 @@ interface FileProcessingTask {
  * Storage trigger that creates processing tasks when files are uploaded
  * Triggers on file creation in Firebase Storage
  */
-export const onFileUploaded = onObjectFinalized(async (event) => {
+export const onFileUploaded = onObjectFinalized({
+  secrets: [mongodbUri],
+}, async (event) => {
   const object = event.data;
   const filePath = object.name;
   const bucket = object.bucket;
@@ -138,7 +144,9 @@ export const onFileUploaded = onObjectFinalized(async (event) => {
  * Storage trigger for file deletion cleanup
  * Triggers when files are deleted from Firebase Storage
  */
-export const onFileDeleted = onObjectDeleted(async (event) => {
+export const onFileDeleted = onObjectDeleted({
+  secrets: [mongodbUri],
+}, async (event) => {
   const object = event.data;
   const filePath = object.name;
 

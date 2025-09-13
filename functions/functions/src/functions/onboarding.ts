@@ -1,12 +1,18 @@
 import { onCall } from 'firebase-functions/v2/https'
+import { defineSecret } from 'firebase-functions/params'
 import * as admin from 'firebase-admin'
 import { getUsersCollection } from '../lib/mongodb'
 import { Subject, OnboardingData, FileMetadata } from '../types/user'
 
+// Define MongoDB secret
+const mongodbUri = defineSecret('MONGODB_URI');
+
 /**
  * Complete user onboarding with subjects and file metadata
  */
-export const completeOnboarding = onCall<OnboardingData>(async (request) => {
+export const completeOnboarding = onCall<OnboardingData>({
+  secrets: [mongodbUri],
+}, async (request) => {
   const { auth, data } = request
   
   if (!auth) {

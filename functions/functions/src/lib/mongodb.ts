@@ -13,6 +13,8 @@ export async function connectToMongoDB(): Promise<Db> {
     return db
   }
 
+  // Note: This function should only be called from within Firebase Functions
+  // that have declared mongodbUri in their secrets array
   const uri = mongodbUri.value()
   if (!uri) {
     throw new Error('MONGODB_URI parameter is not set')

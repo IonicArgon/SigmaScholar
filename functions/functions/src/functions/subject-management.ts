@@ -1,12 +1,18 @@
 import { onCall } from 'firebase-functions/v2/https'
+import { defineSecret } from 'firebase-functions/params'
 import * as admin from 'firebase-admin'
 import { getUsersCollection } from '../lib/mongodb'
 import { Subject } from '../types/user'
 
+// Define MongoDB secret
+const mongodbUri = defineSecret('MONGODB_URI');
+
 /**
  * Add a new subject for the user
  */
-export const addSubject = onCall(async (request) => {
+export const addSubject = onCall<{ subjectName: string }>({
+  secrets: [mongodbUri],
+}, async (request) => {
   const { auth, data } = request
   
   if (!auth) {
@@ -60,7 +66,9 @@ export const addSubject = onCall(async (request) => {
 /**
  * Remove a subject and all its files
  */
-export const removeSubject = onCall(async (request) => {
+export const removeSubject = onCall<{ subjectName: string }>({
+  secrets: [mongodbUri],
+}, async (request) => {
   const { auth, data } = request
   
   if (!auth) {

@@ -1,12 +1,18 @@
 import { onCall } from 'firebase-functions/v2/https'
+import { defineSecret } from 'firebase-functions/params'
 import * as admin from 'firebase-admin'
 import { getUsersCollection } from '../lib/mongodb'
 import { Subject } from '../types/user'
 
+// Define MongoDB secret
+const mongodbUri = defineSecret('MONGODB_URI');
+
 /**
  * Initialize a new user with default onboarding status
  */
-export const initializeUser = onCall(async (request) => {
+export const initializeUser = onCall({
+  secrets: [mongodbUri],
+}, async (request) => {
   const { auth } = request
   
   if (!auth) {
@@ -87,7 +93,9 @@ export const initializeUser = onCall(async (request) => {
 /**
  * Update user profile information
  */
-export const updateUserProfile = onCall(async (request) => {
+export const updateUserProfile = onCall<{ displayName?: string; email?: string }>({
+  secrets: [mongodbUri],
+}, async (request) => {
   const { auth, data } = request
   
   if (!auth) {
@@ -133,7 +141,9 @@ export const updateUserProfile = onCall(async (request) => {
 /**
  * Get user profile and subjects data
  */
-export const getUserData = onCall(async (request) => {
+export const getUserData = onCall({
+  secrets: [mongodbUri],
+}, async (request) => {
   const { auth } = request
   
   if (!auth) {

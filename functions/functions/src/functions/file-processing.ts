@@ -10,18 +10,7 @@ import { CohereClientV2 } from 'cohere-ai';
 const unstructuredApiKey = defineSecret('UNSTRUCTURED_API_KEY');
 const unstructuredApiUrl = defineString('UNSTRUCTURED_API_URL');
 const cohereApiKey = defineSecret('COHERE_API_KEY');
-
-// Initialize clients with parameterized config
-const getUnstructuredClient = () => new UnstructuredClient({
-  serverURL: unstructuredApiUrl.value(),
-  security: {
-    apiKeyAuth: unstructuredApiKey.value(),
-  },
-});
-
-const getCohereClient = () => new CohereClientV2({
-  token: cohereApiKey.value(),
-});
+const mongodbUri = defineSecret('MONGODB_URI');
 
 interface FileProcessingTask {
   userId: string;
@@ -52,6 +41,7 @@ export const processFileContent = onTaskDispatched({
   },
   memory: '2GiB',
   timeoutSeconds: 540, // 9 minutes max
+  secrets: [unstructuredApiKey, cohereApiKey, mongodbUri], // Declare secrets for runtime access
 }, async (req) => {
   const data = req.data as FileProcessingTask;
   const { userId, subjectName, fileName, downloadUrl } = data;
@@ -154,7 +144,14 @@ async function downloadFileFromStorage(downloadUrl: string): Promise<Buffer> {
  */
 async function processWithUnstructured(fileBuffer: Buffer, fileName: string): Promise<any[]> {
   try {
-    const unstructuredClient = getUnstructuredClient();
+    // Initialize client inside function to access secrets
+    const unstructuredClient = new UnstructuredClient({
+      serverURL: unstructuredApiUrl.value(),
+      security: {
+        apiKeyAuth: unstructuredApiKey.value(),
+      },
+    });
+    
     const response = await unstructuredClient.general.partition({
       partitionParameters: {
         files: {
@@ -208,7 +205,11 @@ async function cleanTextWithCohere(elements: any[]): Promise<ProcessedChunk[]> {
       }
 
       try {
-        const cohereClient = getCohereClient();
+        // Initialize client inside function to access secrets
+        const cohereClient = new CohereClientV2({
+          token: cohereApiKey.value(),
+        });
+        
         const response = await cohereClient.chat({
           model: 'command-a-03-2025', // Using command-r as it's more stable than command-a
           messages: [

@@ -1,12 +1,26 @@
 import { onCall } from 'firebase-functions/v2/https'
+import { defineSecret } from 'firebase-functions/params'
 import * as admin from 'firebase-admin'
 import { getUsersCollection } from '../lib/mongodb'
 import { Subject, FileMetadata } from '../types/user'
 
+// Define MongoDB secret
+const mongodbUri = defineSecret('MONGODB_URI');
+
 /**
  * Add files to an existing subject
  */
-export const addFilesToSubject = onCall(async (request) => {
+export const addFilesToSubject = onCall<{
+  subjectName: string
+  files: Array<{
+    name: string
+    size: number
+    type: string
+    data: string // base64 data URL
+  }>
+}>({
+  secrets: [mongodbUri],
+}, async (request) => {
   const { auth, data } = request
   
   if (!auth) {
@@ -113,7 +127,12 @@ export const addFilesToSubject = onCall(async (request) => {
 /**
  * Remove a specific file from a subject
  */
-export const removeFileFromSubject = onCall(async (request) => {
+export const removeFileFromSubject = onCall<{
+  subjectName: string
+  fileName: string
+}>({
+  secrets: [mongodbUri],
+}, async (request) => {
   const { auth, data } = request
   
   if (!auth) {
