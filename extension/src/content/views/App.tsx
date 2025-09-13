@@ -1,4 +1,5 @@
 import PlatformDetector from '../components/PlatformDetector'
+import ShortsDetector from '../components/ShortsDetector'
 import ExtractionDebugPanel from '../../components/ExtractionDebugPanel'
 import '../../index.css'
 import './App.css'
@@ -15,6 +16,11 @@ function App() {
       
       {/* Platform detection is isolated in its own component */}
       <PlatformDetector onPlatformDetected={handlePlatformDetected} />
+      
+      {/* YouTube Shorts quiz blocker */}
+      <ShortsDetector />
+      
+      {/* Extraction debug panel */}
       <ExtractionDebugPanel />
     </>
   )
