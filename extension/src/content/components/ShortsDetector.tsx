@@ -14,7 +14,7 @@ interface Question {
 export const ShortsDetector: React.FC = () => {
   const [showQuiz, setShowQuiz] = useState(false)
   const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
+  const [, setIsLoading] = useState(false)
 
   useEffect(() => {
     // Detect when user scrolls to a new short
@@ -38,11 +38,12 @@ export const ShortsDetector: React.FC = () => {
     observer.observe(document, { subtree: true, childList: true })
 
     // Also listen for scroll events on shorts
+    let scrollTimeout: number
     const handleScroll = () => {
       if (window.location.pathname.includes('/shorts/')) {
         // Debounce scroll detection
-        clearTimeout(handleScroll.timeout)
-        handleScroll.timeout = setTimeout(() => {
+        clearTimeout(scrollTimeout)
+        scrollTimeout = window.setTimeout(() => {
           handleShortViewed()
         }, 1000)
       }
