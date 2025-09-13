@@ -111,9 +111,20 @@ export class VideoExtractor {
         
         captionElements.forEach(element => {
           const text = element.textContent?.trim()
-          if (text && text.length > 0 && !accumulator.segments.has(text)) {
-            accumulator.segments.add(text)
-            newSegmentsAdded = true
+          if (text && text.length > 0) {
+            // Clean and normalize the text
+            const cleanText = this.cleanCaptionText(text)
+            
+            // Check if this text is already contained in existing segments (partial match)
+            const isDuplicate = Array.from(accumulator.segments).some(existing => {
+              return existing.includes(cleanText) || cleanText.includes(existing) || 
+                     this.calculateSimilarity(existing, cleanText) > 0.8
+            })
+            
+            if (!isDuplicate && !accumulator.segments.has(cleanText)) {
+              accumulator.segments.add(cleanText)
+              newSegmentsAdded = true
+            }
           }
         })
         
@@ -137,6 +148,32 @@ export class VideoExtractor {
     }
   }
 
+  // Clean caption text to reduce duplicates
+  private static cleanCaptionText(text: string): string {
+    return text
+      .trim()
+      .replace(/\s+/g, ' ') // Normalize whitespace
+      .replace(/[.,!?]+$/, '') // Remove trailing punctuation
+      .toLowerCase() // Normalize case for comparison
+  }
+
+  // Calculate text similarity (0-1 scale)
+  private static calculateSimilarity(str1: string, str2: string): number {
+    if (str1 === str2) return 1.0
+    
+    const longer = str1.length > str2.length ? str1 : str2
+    const shorter = str1.length > str2.length ? str2 : str1
+    
+    if (longer.length === 0) return 1.0
+    
+    // Simple containment check
+    if (longer.includes(shorter) || shorter.includes(longer)) {
+      return Math.max(shorter.length / longer.length, 0.8)
+    }
+    
+    return 0
+  }
+
   // Get accumulated transcript for a video
   static getAccumulatedTranscript(videoId: string): string | null {
     const accumulator = this.transcriptAccumulator.get(videoId)
@@ -145,12 +182,38 @@ export class VideoExtractor {
       return null
     }
     
-    // Convert set to array and join
-    const transcript = Array.from(accumulator.segments).join(' ')
+    // Convert set to array and clean up
+    const segments = Array.from(accumulator.segments)
     
-    console.log(`[VideoExtractor] 📜 Retrieved accumulated transcript: ${accumulator.segments.size} segments, ${transcript.length} chars, ${accumulator.isComplete ? 'complete' : 'in progress'}`)
+    // Sort segments by length (longer segments usually come later and are more complete)
+    segments.sort((a, b) => a.length - b.length)
     
-    return transcript
+    // Try to create a coherent transcript by removing substrings and overlaps
+    const cleanedSegments: string[] = []
+    
+    for (const segment of segments) {
+      // Check if this segment is already contained in a longer segment
+      const isContained = cleanedSegments.some(existing => 
+        existing.includes(segment) || this.calculateSimilarity(existing, segment) > 0.9
+      )
+      
+      if (!isContained) {
+        cleanedSegments.push(segment)
+      }
+    }
+    
+    // Join segments with proper spacing
+    const transcript = cleanedSegments.join(' ').trim()
+    
+    // Final cleanup
+    const finalTranscript = transcript
+      .replace(/\s+/g, ' ') // Normalize spaces
+      .replace(/(.)\1{2,}/g, '$1') // Remove repeated characters (3+ times)
+      .replace(/(\w+\s+)\1{2,}/g, '$1') // Remove repeated words
+    
+    console.log(`[VideoExtractor] 📜 Retrieved accumulated transcript: ${accumulator.segments.size} segments → ${cleanedSegments.length} cleaned → ${finalTranscript.length} chars, ${accumulator.isComplete ? 'complete' : 'in progress'}`)
+    
+    return finalTranscript
   }
   static extractYouTubeShorts(): VideoData | null {
     try {
@@ -307,12 +370,12 @@ export class VideoExtractor {
       const videoData: VideoData = {
         platform: 'youtube-shorts',
         title,
-        description,
-        author,
+        description: description || undefined,
+        author: author || undefined,
         url: window.location.href,
         timestamp: Date.now(),
         id: videoId,
-        transcript,
+        transcript: transcript || undefined,
         duration,
         hasAudio,
         extractionQuality,
