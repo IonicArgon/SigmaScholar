@@ -1,0 +1,103 @@
+.home-container {
+  padding: 20px;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.home-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.user-info span {
+  font-weight: 500;
+  color: #333;
+  font-size: 16px;
+}
+
+.sign-out-button {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.sign-out-button:hover {
+  background: #c82333;
+}
+
+.home-content h3 {
+  margin: 0 0 20px 0;
+  color: #333;
+  font-size: 20px;
+}
+
+.subjects-overview h4 {
+  margin: 0 0 15px 0;
+  color: #333;
+  font-size: 16px;
+}
+
+.subjects-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-bottom: 25px;
+}
+
+.subject-card {
+  padding: 15px;
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+}
+
+.subject-card h5 {
+  margin: 0 0 5px 0;
+  color: #333;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.subject-card p {
+  margin: 0;
+  color: #666;
+  font-size: 12px;
+}
+
+.empty-subjects {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+  font-style: italic;
+  margin-bottom: 25px;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.action-button {
+  background: #4285f4;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.action-button:hover {
+  background: #3367d6;
+}
