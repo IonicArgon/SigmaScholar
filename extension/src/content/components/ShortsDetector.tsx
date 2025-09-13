@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { QuizBlocker } from '../../components/QuizBlocker'
 import { ShortsTracker } from '../../utils/shortsTracker'
-import { generateQuizQuestion } from '../../lib/questionGenerator'
 
 interface Question {
   id: string
@@ -82,9 +81,19 @@ export const ShortsDetector: React.FC = () => {
     setIsLoading(true)
     
     try {
-      // Generate a quiz question (you'll need to implement this)
-      const question = await generateQuizQuestion()
-      setCurrentQuestion(question)
+      // Use fallback question since we're now using Cohere API for question generation
+      setCurrentQuestion({
+        id: 'fallback',
+        question: 'What is the primary benefit of active learning?',
+        options: [
+          'It requires less effort',
+          'It improves retention and understanding',
+          'It takes less time',
+          'It eliminates the need for practice'
+        ],
+        correctAnswer: 1,
+        explanation: 'Active learning engages multiple cognitive processes, leading to better retention and deeper understanding of the material.'
+      })
       setShowQuiz(true)
     } catch (error) {
       console.error('Failed to load quiz question:', error)
