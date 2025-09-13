@@ -1,9 +1,21 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { User, onAuthStateChanged } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
+import { initializeUser } from '@/lib/functions'
+
+interface Subject {
+  id: string
+  name: string
+  files: Array<{
+    name: string
+    size: number
+    type: string
+    data: string
+  }>
+}
 
 interface UserProfile {
-  subjects: string[]
+  subjects: Subject[]
   isOnboarded: boolean
 }
 
@@ -26,18 +38,74 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(user)
       
       if (user) {
-        // For now, we'll store profile data in localStorage
-        // Later this can be moved to Firestore
-        const savedProfile = localStorage.getItem(`profile_${user.uid}`)
-        if (savedProfile) {
-          setProfile(JSON.parse(savedProfile))
-        } else {
-          // Default profile for new users
-          const defaultProfile: UserProfile = {
-            subjects: [],
-            isOnboarded: false
+        try {
+          // Check Firebase custom claims for onboarding status (force refresh)
+          const idTokenResult = await user.getIdTokenResult(true)
+          const isOnboarded = idTokenResult.claims.isOnboarded || false
+          
+          console.log('Firebase custom claims:', { isOnboarded })
+          
+          if (isOnboarded) {
+            // User is onboarded, check for saved profile or load from localStorage fallback
+            const savedProfile = localStorage.getItem(`profile_${user.uid}`)
+            const savedSubjects = localStorage.getItem('sigma_subjects')
+            
+            if (savedProfile) {
+              const profile = JSON.parse(savedProfile)
+              setProfile({ ...profile, isOnboarded: true })
+            } else if (savedSubjects) {
+              // Fallback to localStorage subjects
+              const subjects = JSON.parse(savedSubjects)
+              const normalizedSubjects = subjects.map((subject: any) => {
+                if (typeof subject === 'string') {
+                  return {
+                    id: Date.now().toString() + Math.random(),
+                    name: subject,
+                    files: []
+                  }
+                }
+                return subject
+              })
+              const profile: UserProfile = {
+                subjects: normalizedSubjects,
+                isOnboarded: true
+              }
+              setProfile(profile)
+              localStorage.setItem(`profile_${user.uid}`, JSON.stringify(profile))
+            } else {
+              // User is onboarded but no local data
+              setProfile({
+                subjects: [],
+                isOnboarded: true
+              })
+            }
+          } else {
+            // User is not onboarded, initialize in backend
+            try {
+              const result = await initializeUser()
+              console.log('User initialized in backend:', result.data)
+            } catch (error) {
+              console.warn('Failed to initialize user in backend:', error)
+            }
+            
+            // Set default profile for new users
+            setProfile({
+              subjects: [],
+              isOnboarded: false
+            })
           }
-          setProfile(defaultProfile)
+        } catch (error) {
+          console.error('Error loading user profile:', error)
+          // Fallback to localStorage-only approach
+          const savedProfile = localStorage.getItem(`profile_${user.uid}`)
+          if (savedProfile) {
+            setProfile(JSON.parse(savedProfile))
+          } else {
+            setProfile({
+              subjects: [],
+              isOnboarded: false
+            })
+          }
         }
       } else {
         setProfile(null)

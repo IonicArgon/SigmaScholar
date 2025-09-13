@@ -22,6 +22,13 @@ export default defineManifest({
     js: ['src/content/main.tsx'],
     matches: ['https://*/*'],
   }],
+  web_accessible_resources: [{
+    resources: ['src/pages/onboarding/*', 'src/pages/files/*', 'src/pages/settings/*'],
+    matches: ['<all_urls>']
+  }],
+  background: {
+    service_worker: 'src/background/main.ts'
+  },
   content_security_policy: {
     extension_pages: "script-src 'self'; object-src 'self'; connect-src 'self' ws://localhost:* http://localhost:* https://apis.google.com https://www.gstatic.com https://www.googleapis.com https://securetoken.googleapis.com;"
   },
