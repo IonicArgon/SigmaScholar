@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
-import { initializeUser, updateUserProfile, addSubject, removeSubject, removeFileMetadata } from '@/lib/firestore'
+import { updateUserProfile, addSubject, removeSubject, removeFileMetadata } from '@/lib/firestore'
 import { addFilesToSubject } from '@/lib/functions'
 import { getUserData, FileMetadata, Subject } from '@/lib/firestore'
 
@@ -19,7 +19,9 @@ interface UserData {
 }
 
 const SettingsApp: React.FC = () => {
-  const { user } = useAuth()
+  console.log('SettingsApp component loaded!')
+  
+  const { user, loading: authLoading } = useAuth()
   const [userData, setUserData] = useState<UserData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -44,8 +46,10 @@ const SettingsApp: React.FC = () => {
   // Removed Firebase Functions dependency
 
   useEffect(() => {
-    loadUserData()
-  }, [user])
+    if (user && !authLoading) {
+      loadUserData()
+    }
+  }, [user, authLoading])
 
   const loadUserData = async () => {
     if (!user) return
@@ -169,6 +173,10 @@ const SettingsApp: React.FC = () => {
         if (uploadResult.filesFailed > 0) {
           setError(`${uploadResult.filesFailed} files failed to upload`)
         }
+        
+        // Document processing is automatically triggered by the backend
+        // after successful file uploads via Pub/Sub
+        console.log('Document processing will be triggered automatically by the backend')
       } else {
         throw new Error('Upload failed')
       }
@@ -301,6 +309,16 @@ const SettingsApp: React.FC = () => {
     }
   }
 
+  // Debug logging
+  console.log('SettingsApp render state:', { 
+    user: !!user, 
+    authLoading, 
+    loading, 
+    userData: !!userData, 
+    error,
+    userDataSubjects: userData?.subjects?.length 
+  })
+
   // Early return for debugging
   if (!user) {
     return (
@@ -345,7 +363,7 @@ const SettingsApp: React.FC = () => {
     )
   }
 
-  const totalFiles = userData.subjects.reduce((sum, subject) => sum + subject.fileCount, 0)
+  const totalFiles = userData.subjects.reduce((sum, subject) => sum + subject.files.length, 0)
   const totalSize = userData.subjects.reduce((sum, subject) => 
     sum + subject.files.reduce((fileSum, file) => fileSum + file.fileSize, 0), 0
   )

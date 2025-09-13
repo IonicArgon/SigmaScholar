@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import './PlatformDetector.css'
 import { VideoExtractor, VideoData } from '../utils/videoExtractor'
 import { LocalStorage } from '../utils/localStorage'
-import { CohereAPI } from '../utils/cohereAPI'
+import { JSONExporter } from '../utils/jsonExporter'
 
 type Platform = 'youtube-shorts' | 'instagram-reels' | 'tiktok' | 'other'
 
@@ -57,7 +57,52 @@ export default function PlatformDetector({ onPlatformDetected }: PlatformDetecto
         
         // Extract video data when platform is detected
         setTimeout(() => {
+          console.group('[PlatformDetector] 🔍 Video Data Extraction')
+          console.log('Current URL:', window.location.href)
+          console.log('Platform detected:', detectedPlatform)
+          
           const videoData = VideoExtractor.extractCurrentVideo()
+          
+          if (videoData) {
+            console.log('📊 Extraction Results Summary:')
+            console.table({
+              'Platform': videoData.platform,
+              'Title Length': videoData.title?.length || 0,
+              'Has Description': !!videoData.description,
+              'Has Author': !!videoData.author,
+              'Has Transcript': !!videoData.transcript,
+              'Has Audio': !!videoData.hasAudio,
+              'Duration': videoData.duration || 'Unknown',
+              'Hashtags Count': videoData.hashtags?.length || 0,
+              'Mentions Count': videoData.mentions?.length || 0,
+              'Quality': videoData.extractionQuality || 'unknown'
+            })
+            
+            if (videoData.extractionDetails) {
+              console.log('🔧 Technical Details:')
+              console.log('Title source selector:', videoData.extractionDetails.titleSource)
+              console.log('Extraction attempts:', videoData.extractionDetails.extractionAttempts)
+              console.log('Failed selectors:', videoData.extractionDetails.failedSelectors)
+            }
+            
+            // Log actual content (truncated)
+            console.log('📝 Content Preview:')
+            if (videoData.title) console.log('Title:', videoData.title.substring(0, 100) + (videoData.title.length > 100 ? '...' : ''))
+            if (videoData.description) console.log('Description:', videoData.description.substring(0, 100) + (videoData.description.length > 100 ? '...' : ''))
+            if (videoData.author) console.log('Author:', videoData.author)
+            if (videoData.transcript) console.log('Transcript:', videoData.transcript.substring(0, 100) + (videoData.transcript.length > 100 ? '...' : ''))
+            if (videoData.hashtags && videoData.hashtags.length > 0) console.log('Hashtags:', videoData.hashtags)
+            if (videoData.mentions && videoData.mentions.length > 0) console.log('Mentions:', videoData.mentions)
+            
+          } else {
+            console.log('❌ No video data extracted')
+            console.log('Available DOM elements:')
+            console.log('- Video elements:', document.querySelectorAll('video').length)
+            console.log('- H1 elements:', document.querySelectorAll('h1').length)
+            console.log('- Meta elements:', document.querySelectorAll('meta').length)
+          }
+          
+          console.groupEnd()
           setCurrentVideo(videoData)
         }, 1000) // Wait for page to fully load
       }
@@ -146,29 +191,36 @@ export default function PlatformDetector({ onPlatformDetected }: PlatformDetecto
     }
   }
 
-  const handleGenerateQuestions = async () => {
+  const handleExportJSON = () => {
     if (!currentVideo) return
     
     setIsProcessing(true)
     try {
-      // For now, we'll use a placeholder API key prompt
-      // In production, this should be configured in settings
-      const apiKey = prompt('Enter your Cohere API key (get one free at cohere.ai):')
-      if (!apiKey) {
-        setIsProcessing(false)
-        return
-      }
+      // Download JSON file
+      JSONExporter.downloadJSON(currentVideo)
       
-      CohereAPI.setApiKey(apiKey)
-      const questions = await CohereAPI.generateQuestions(currentVideo)
+      // Also log to console for easy access
+      JSONExporter.logToConsole(currentVideo)
       
-      await LocalStorage.saveVideo(currentVideo)
-      await LocalStorage.updateVideoQuestions(currentVideo.id, questions)
-      
-      alert(`Generated ${questions.length} study questions!\n\n${questions.join('\n\n')}`)
+      alert('Video data exported to JSON file and logged to console!')
     } catch (error) {
-      console.error('Error generating questions:', error)
-      alert('Error generating questions. Please check your API key and try again.')
+      console.error('Error exporting JSON:', error)
+      alert('Error exporting JSON. Please try again.')
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
+  const handleCopyJSON = async () => {
+    if (!currentVideo) return
+    
+    setIsProcessing(true)
+    try {
+      await JSONExporter.copyToClipboard(currentVideo)
+      alert('Video data copied to clipboard as JSON!')
+    } catch (error) {
+      console.error('Error copying to clipboard:', error)
+      alert('Error copying to clipboard. Please try again.')
     } finally {
       setIsProcessing(false)
     }
@@ -205,11 +257,18 @@ export default function PlatformDetector({ onPlatformDetected }: PlatformDetecto
               📚 Save for Research
             </button>
             <button 
-              className="sigma-scholar-action-btn" 
-              onClick={handleGenerateQuestions}
+              className="action-btn" 
+              onClick={handleExportJSON}
               disabled={isProcessing || !currentVideo}
             >
-              🧠 Generate Questions
+              📄 Export JSON
+            </button>
+            <button 
+              className="action-btn" 
+              onClick={handleCopyJSON}
+              disabled={isProcessing || !currentVideo}
+            >
+              📋 Copy JSON
             </button>
             <button 
               className="sigma-scholar-action-btn" 

@@ -26,7 +26,7 @@ export default defineManifest({
     all_frames: false,
   }],
   web_accessible_resources: [{
-    resources: ['src/pages/onboarding/*', 'src/pages/files/*', 'src/pages/settings/*'],
+    resources: ['src/pages/onboarding/*', 'src/pages/settings/*'],
     matches: ['<all_urls>']
   }],
   background: {

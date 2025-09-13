@@ -1,9 +1,6 @@
 import { onCall } from 'firebase-functions/v2/https'
 import * as admin from 'firebase-admin'
-import { getFirestore } from 'firebase-admin/firestore'
-
-// Initialize Firestore
-const db = getFirestore()
+import { firestore } from '../lib/firebase'
 
 // Types
 interface FileData {
@@ -62,7 +59,7 @@ export const completeOnboarding = onCall<OnboardingData>({}, async (request) => 
   
   try {
     // Check if user exists in Firestore
-    const userRef = db.collection('users').doc(uid)
+    const userRef = firestore.collection('users').doc(uid)
     const userDoc = await userRef.get()
     
     if (!userDoc.exists) {
@@ -78,11 +75,11 @@ export const completeOnboarding = onCall<OnboardingData>({}, async (request) => 
     }
     
     // Upload files to Firebase Storage and create subjects in Firestore
-    const batch = db.batch()
+    const batch = firestore.batch()
     
     for (const subject of subjects) {
       // Create subject document
-      const subjectRef = db.collection('subjects').doc()
+      const subjectRef = firestore.collection('subjects').doc()
       const subjectData = {
         userId: uid,
         name: subject.name,
@@ -164,7 +161,7 @@ export const completeOnboarding = onCall<OnboardingData>({}, async (request) => 
         }
         
         // Create file document in Firestore
-        const fileRef = db.collection('files').doc()
+        const fileRef = firestore.collection('files').doc()
         const fileData = {
           userId: uid,
           subjectId: subjectRef.id,
@@ -172,6 +169,30 @@ export const completeOnboarding = onCall<OnboardingData>({}, async (request) => 
           ...fileMetadata
         }
         batch.set(fileRef, fileData)
+        
+        // Trigger document processing for successfully uploaded files
+        if (fileMetadata.processingStatus === 'completed') {
+          try {
+            const { PubSub } = require('@google-cloud/pubsub')
+            const pubsub = new PubSub()
+            
+            const messageData = {
+              userId: uid,
+              fileId: fileRef.id,
+              storagePath: fileMetadata.storagePath,
+              fileName: fileMetadata.fileName
+            }
+            
+            const topic = pubsub.topic('process-document')
+            await topic.publishMessage({
+              json: messageData
+            })
+            
+            console.log(`[completeOnboarding] Triggered processing for: ${fileMetadata.fileName}`)
+          } catch (processingError) {
+            console.warn(`[completeOnboarding] Failed to trigger processing for ${fileMetadata.fileName}:`, processingError)
+          }
+        }
       }
     }
     

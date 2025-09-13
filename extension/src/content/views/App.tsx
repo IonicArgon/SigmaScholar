@@ -1,5 +1,7 @@
 import PlatformDetector from '../components/PlatformDetector'
 import ShortsDetector from '../components/ShortsDetector'
+import ExtractionDebugPanel from '../../components/ExtractionDebugPanel'
+import '../../index.css'
 import './App.css'
 
 function App() {
@@ -17,6 +19,9 @@ function App() {
       
       {/* YouTube Shorts quiz blocker */}
       <ShortsDetector />
+      
+      {/* Extraction debug panel */}
+      <ExtractionDebugPanel />
     </>
   )
 }

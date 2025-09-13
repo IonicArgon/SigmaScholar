@@ -6,14 +6,16 @@ import { getUserData, removeFileMetadata, FileMetadata, Subject } from '@/lib/fi
 type FileData = FileMetadata & { subjectName: string }
 
 const FilesApp: React.FC = () => {
-  const { } = useAuth()
+  const { user, loading } = useAuth()
   const [files, setFiles] = useState<FileData[]>([])
   const [subjects, setSubjects] = useState<(Subject & { files: FileMetadata[] })[]>([])
   const [selectedSubject, setSelectedSubject] = useState<string>('all')
 
   useEffect(() => {
-    loadUserData()
-  }, [])
+    if (user && !loading) {
+      loadUserData()
+    }
+  }, [user, loading])
 
   const loadUserData = async () => {
     try {
@@ -177,6 +179,29 @@ const FilesApp: React.FC = () => {
     : files.filter(f => f.subjectName === selectedSubject)
 
   const totalSize = files.reduce((sum, file) => sum + file.fileSize, 0)
+
+  if (loading) {
+    return (
+      <div className="files-container">
+        <div className="loading">
+          <div className="loading-spinner"></div>
+          <div className="loading-text">Loading your files...</div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return (
+      <div className="files-container">
+        <div className="auth-required">
+          <h2>Authentication Required</h2>
+          <p>Please sign in to view your files.</p>
+          <button onClick={() => window.close()}>Close</button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="files-container">
