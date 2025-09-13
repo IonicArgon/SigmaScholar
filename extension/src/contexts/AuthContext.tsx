@@ -1,9 +1,12 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { User, onAuthStateChanged } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
+import { initializeUser, getUserData, Subject, FileMetadata } from '@/lib/firestore'
+
+// Use types from firestore.ts
 
 interface UserProfile {
-  subjects: string[]
+  subjects: (Subject & { files: FileMetadata[] })[]
   isOnboarded: boolean
 }
 
@@ -26,18 +29,53 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(user)
       
       if (user) {
-        // For now, we'll store profile data in localStorage
-        // Later this can be moved to Firestore
-        const savedProfile = localStorage.getItem(`profile_${user.uid}`)
-        if (savedProfile) {
-          setProfile(JSON.parse(savedProfile))
-        } else {
-          // Default profile for new users
-          const defaultProfile: UserProfile = {
+        try {
+          // Check Firebase custom claims for onboarding status (force refresh)
+          const idTokenResult = await user.getIdTokenResult(true)
+          const isOnboarded = idTokenResult.claims.isOnboarded || false
+          
+          console.log('Firebase custom claims:', { isOnboarded })
+          
+          if (isOnboarded) {
+            // User is onboarded, load from Firestore
+            try {
+              const userData = await getUserData()
+              
+              const profile: UserProfile = {
+                subjects: userData.subjects || [],
+                isOnboarded: true
+              }
+              setProfile(profile)
+            } catch (error) {
+              console.warn('Failed to load user data from Firestore:', error)
+              // Fallback to empty profile
+              setProfile({
+                subjects: [],
+                isOnboarded: true
+              })
+            }
+          } else {
+            // User is not onboarded, initialize in Firestore
+            try {
+              await initializeUser()
+              console.log('User initialized in Firestore')
+            } catch (error) {
+              console.warn('Failed to initialize user in Firestore:', error)
+            }
+            
+            // Set default profile for new users
+            setProfile({
+              subjects: [],
+              isOnboarded: false
+            })
+          }
+        } catch (error) {
+          console.error('Error loading user profile:', error)
+          // Fallback to empty profile
+          setProfile({
             subjects: [],
             isOnboarded: false
-          }
-          setProfile(defaultProfile)
+          })
         }
       } else {
         setProfile(null)
@@ -55,8 +93,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const newProfile = { ...profile, ...updates }
     setProfile(newProfile)
     
-    // Save to localStorage (later move to Firestore)
-    localStorage.setItem(`profile_${user.uid}`, JSON.stringify(newProfile))
+    // Profile updates should be handled through Firebase Functions
+    // No localStorage storage needed as data comes from Firebase/MongoDB
   }
 
   return (

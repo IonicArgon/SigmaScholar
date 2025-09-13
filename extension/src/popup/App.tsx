@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
 import { AuthProvider, useAuth } from '@/contexts/AuthContext'
-import OnboardingPage from '@/components/OnboardingPage'
-import HomePage from '@/components/HomePage'
+// OnboardingPage moved to extension pages
+import HomePage from '@/components/home/HomePage'
 import './App.css'
 
 function AppContent() {
@@ -44,9 +44,26 @@ function AppContent() {
     )
   }
 
-  // If user is authenticated but not onboarded, show onboarding
+  // If user is authenticated but not onboarded, open onboarding page
   if (user && profile && !profile.isOnboarded) {
-    return <OnboardingPage />
+    const openOnboarding = () => {
+      chrome.tabs.create({
+        url: chrome.runtime.getURL('src/pages/onboarding/index.html')
+      })
+      window.close() // Close popup after opening onboarding
+    }
+    
+    return (
+      <div className="popup-container">
+        <div className="auth-page">
+          <h2>SigmaScholar</h2>
+          <p>Complete your setup to get started</p>
+          <button onClick={openOnboarding} className="auth-button">
+            Complete Setup
+          </button>
+        </div>
+      </div>
+    )
   }
 
   // If user is authenticated and onboarded, show home page
