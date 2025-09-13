@@ -33,6 +33,6 @@ export default defineManifest({
     service_worker: 'src/background/main.ts'
   },
   content_security_policy: {
-    extension_pages: "script-src 'self'; object-src 'self'; connect-src 'self' ws://localhost:* http://localhost:* https://apis.google.com https://www.gstatic.com https://www.googleapis.com https://securetoken.googleapis.com;"
+    extension_pages: "script-src 'self'; object-src 'self'; worker-src 'self'; connect-src 'self' ws://localhost:* http://localhost:* https://apis.google.com https://www.gstatic.com https://www.googleapis.com https://securetoken.googleapis.com;"
   },
 })

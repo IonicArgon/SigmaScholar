@@ -1,20 +1,16 @@
-import PlatformDetector from '../components/PlatformDetector'
+import PlatformDetector from '../../components/PlatformDetector'
 import './App.css'
 
 function App() {
   const handlePlatformDetected = (platform: string) => {
-    // You can add logic here to communicate with your coworker's onboarding features
-    console.log('Platform detected for potential integration:', platform)
+    console.log(`SigmaScholar detected platform: ${platform}`)
   }
 
   return (
-    <>
-      {/* Your coworker can add onboarding components here without conflicts */}
-      
-      {/* Platform detection is isolated in its own component */}
-      <PlatformDetector onPlatformDetected={handlePlatformDetected} />
-    </>
-  )
+    <PlatformDetector onPlatformDetected={handlePlatformDetected} />
+    // You can add logic here to communicate with your coworker's onboarding features
+    console.log('Platform detected for potential integration:', platform)
+  }
 }
 
 export default App
