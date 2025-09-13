@@ -1,10 +1,15 @@
 
-/* Modern Home Page Styles */
+/* Sigma Home Page Styles 💪 */
 .home-container {
   padding: 24px;
   max-width: 400px;
   margin: 0 auto;
-  animation: fadeIn var(--transition-normal);
+  animation: fadeIn var(--transition-normal), sigmaGlow 3s ease-in-out infinite alternate;
+}
+
+@keyframes sigmaGlow {
+  0% { filter: drop-shadow(0 0 5px rgba(138, 43, 226, 0.3)); }
+  100% { filter: drop-shadow(0 0 15px rgba(138, 43, 226, 0.6)); }
 }
 
 /* Header Section */
