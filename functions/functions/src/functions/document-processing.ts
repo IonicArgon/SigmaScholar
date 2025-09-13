@@ -96,7 +96,7 @@ export const processDocument = onMessagePublished({
       console.log(`[processDocument] Processing completed for: ${fileName}`)
       
     } else {
-      throw new Error(`Unstructured.io returned status code: ${responseData.statusCode}`)
+      throw new Error(`Unstructured.io returned status code: ${responseData.status_code}`)
     }
     
   } catch (error) {
