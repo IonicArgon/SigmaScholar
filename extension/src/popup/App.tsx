@@ -36,7 +36,10 @@ function AppContent() {
   if (loading) {
     return (
       <div className="popup-container">
-        <div className="loading">Loading...</div>
+        <div className="loading">
+          <div className="loading-spinner"></div>
+          <div className="loading-text">Loading SigmaScholar...</div>
+        </div>
       </div>
     )
   }
@@ -72,8 +75,10 @@ function AppContent() {
   return (
     <div className="popup-container">
       <div className="auth-page">
-        <h2>SigmaScholar</h2>
-        <p>{isSignUp ? 'Create your account' : 'Sign in to get started'}</p>
+        <div className="auth-header">
+          <h2>SigmaScholar</h2>
+          <p>{isSignUp ? 'Create your account' : 'Sign in to get started'}</p>
+        </div>
         
         <form onSubmit={handleSubmit} className="auth-form">
           {isSignUp && (

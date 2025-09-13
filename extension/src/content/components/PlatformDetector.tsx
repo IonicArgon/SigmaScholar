@@ -194,7 +194,7 @@ export default function PlatformDetector({ onPlatformDetected }: PlatformDetecto
     <div className="platform-detector">
       {show && (
         <div className={`platform-popup ${show ? 'opacity-100' : 'opacity-0'}`}>
-          <h3 style={{ color: platformInfo.color }}>📱 {platformInfo.name} Detected!</h3>
+          <h3>📱 {platformInfo.name} Detected!</h3>
           <p>SigmaScholar is ready to help with your research.</p>
           <div className="platform-actions">
             <button 
