@@ -58,7 +58,14 @@ Requirements:
 4. Always return valid JSON format
 5. Include explanations for all answers
 6. Wrong answers should not be explicitly marked or easily guessable
-7. For math content, use clear spacing and standard notation (e.g., "b² - 4ac", "x^2 + 2x + 1") for better readability. Blackboard bold math symbols should be wrapped with <b></b> tags.
+7. For mathematical expressions, use AsciiMath notation wrapped in backticks. Examples:
+   - Quadratic formula: \`x = (-b +- sqrt(b^2 - 4ac))/(2a)\`
+   - Fractions: \`(x+1)/(x-1)\`
+   - Integrals: \`int_0^1 f(x) dx\`
+   - Matrices: \`[[a,b],[c,d]]\`
+   - Greek letters: \`alpha, beta, gamma, pi, theta\`
+   - Subscripts/superscripts: \`x_1^2, H_2O, CO_2\`
+   Always use AsciiMath for any mathematical content to ensure proper rendering.
 
 JSON Response Format:
 {

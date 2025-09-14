@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import './QuizBlocker.css'
+import { renderMathInElement, processTextForMath } from '../utils/mathJax'
 
 interface Question {
   id: string
@@ -24,6 +25,10 @@ export const QuizBlocker: React.FC<QuizBlockerProps> = ({
   const [showResult, setShowResult] = useState(false)
   const [isCorrect, setIsCorrect] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const questionRef = useRef<HTMLDivElement>(null)
+  const optionsRefs = useRef<(HTMLDivElement | null)[]>([])
+  const explanationRef = useRef<HTMLDivElement>(null)
+
 
   useEffect(() => {
     // Trigger entrance animation
@@ -87,6 +92,28 @@ export const QuizBlocker: React.FC<QuizBlockerProps> = ({
     }
   }, [])
 
+  // Effect to render MathJax when question changes or result is shown
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      // Render math in question
+      if (questionRef.current) {
+        renderMathInElement(questionRef.current)
+      }
+      
+      // Render math in options
+      optionsRefs.current.forEach(ref => {
+        if (ref) renderMathInElement(ref)
+      })
+      
+      // Render math in explanation if shown
+      if (showResult && explanationRef.current) {
+        renderMathInElement(explanationRef.current)
+      }
+    }, 100) // Small delay to ensure DOM is updated
+    
+    return () => clearTimeout(timer)
+  }, [question, showResult])
+
   const handleAnswerSelect = (answerIndex: number) => {
     if (showResult) return
     setSelectedAnswer(answerIndex)
@@ -131,7 +158,11 @@ export const QuizBlocker: React.FC<QuizBlockerProps> = ({
         {/* Question Section */}
         <div className={`quiz-content ${showResult ? 'show-result' : ''}`}>
           <div className="question-section">
-            <h2 className="question-text">{question.question}</h2>
+            <h2 
+              className="question-text" 
+              ref={questionRef}
+              dangerouslySetInnerHTML={{ __html: processTextForMath(question.question) }}
+            />
           </div>
 
           {/* Answer Options */}
@@ -150,7 +181,11 @@ export const QuizBlocker: React.FC<QuizBlockerProps> = ({
                 disabled={showResult}
               >
                 <div className="option-letter">{String.fromCharCode(65 + index)}</div>
-                <div className="option-text">{option}</div>
+                <div 
+                  className="option-text" 
+                  ref={el => { optionsRefs.current[index] = el }}
+                  dangerouslySetInnerHTML={{ __html: processTextForMath(option) }}
+                />
                 {showResult && index === question.correctAnswer && (
                   <div className="check-icon">✓</div>
                 )}
@@ -171,9 +206,11 @@ export const QuizBlocker: React.FC<QuizBlockerProps> = ({
                 {isCorrect ? 'Excellent!' : 'Not quite right'}
               </div>
               {question.explanation && (
-                <div className="explanation">
-                  {question.explanation}
-                </div>
+                <div 
+                  className="explanation" 
+                  ref={explanationRef}
+                  dangerouslySetInnerHTML={{ __html: processTextForMath(question.explanation) }}
+                />
               )}
             </div>
           )}

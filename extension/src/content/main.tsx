@@ -1,11 +1,20 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './views/App.tsx'
+import { initializeMathJax } from '../utils/mathJax'
 
 console.log('[CRXJS] Hello world from content script!')
 
 // Ensure DOM is ready
-function initializeApp() {
+async function initializeApp() {
+  // Initialize MathJax first
+  try {
+    await initializeMathJax()
+    console.log('[CRXJS] MathJax initialized successfully')
+  } catch (error) {
+    console.warn('[CRXJS] Failed to initialize MathJax:', error)
+  }
+
   // Remove any existing instances
   const existingApp = document.getElementById('crxjs-app')
   if (existingApp) {
