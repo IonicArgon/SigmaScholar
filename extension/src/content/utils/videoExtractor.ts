@@ -59,8 +59,13 @@ export class VideoExtractor {
     return this.transcriptAccumulator.get(videoId)!
   }
 
-  // Start transcript monitoring for a video
-  static startTranscriptMonitoring(videoId: string): void {
+  // Start transcript monitoring for a video (only when needed for quiz generation)
+  static startTranscriptMonitoring(videoId: string, shouldMonitor: boolean = true): void {
+    if (!shouldMonitor) {
+      console.log(`[VideoExtractor] ⏭️ Skipping transcript monitoring for video ${videoId.substring(0, 8)}... (not needed for quiz)`)
+      return
+    }
+
     this.cleanupOldTranscripts()
     
     const accumulator = this.getTranscriptAccumulator(videoId)
@@ -215,7 +220,7 @@ export class VideoExtractor {
     
     return finalTranscript
   }
-  static extractYouTubeShorts(): VideoData | null {
+  static extractYouTubeShorts(shouldMonitorTranscript: boolean = false): VideoData | null {
     try {
       console.log('🎬 ═══════════════════════════════════════════════')
       console.log('📍 NEW SHORT:', window.location.href.split('/shorts/')[1]?.substring(0, 10) + '...')
@@ -313,7 +318,7 @@ export class VideoExtractor {
       
       // Extract transcript with accumulation
       // Start transcript monitoring if not already started
-      this.startTranscriptMonitoring(videoId)
+      this.startTranscriptMonitoring(videoId, shouldMonitorTranscript)
       
       // Get both immediate and accumulated transcript
       const immediateTranscript = this.extractYouTubeTranscript()
@@ -739,12 +744,12 @@ export class VideoExtractor {
     }
   }
 
-  static extractCurrentVideo(): VideoData | null {
+  static extractCurrentVideo(shouldMonitorTranscript: boolean = false): VideoData | null {
     const hostname = window.location.hostname
     const url = window.location.href
 
     if (hostname.includes('youtube.com') && url.includes('/shorts/')) {
-      return this.extractYouTubeShorts()
+      return this.extractYouTubeShorts(shouldMonitorTranscript)
     }
     
     if (hostname.includes('instagram.com') && url.includes('/reel/')) {

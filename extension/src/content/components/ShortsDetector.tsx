@@ -18,7 +18,7 @@ interface QuizQuestion {
 export const ShortsDetector: React.FC = () => {
   const [showQuiz, setShowQuiz] = useState(false)
   const [currentQuestion, setCurrentQuestion] = useState<QuizQuestion | null>(null)
-  const [, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
     // Detect when user scrolls to a new short
@@ -94,12 +94,12 @@ export const ShortsDetector: React.FC = () => {
         throw new Error('No subject selected. Please select a subject in Study Mode first.')
       }
 
-      // Extract current video data
-      const videoData = VideoExtractor.extractCurrentVideo()
+      // Extract current video data with transcript monitoring enabled (since we're generating a quiz)
+      const videoData = VideoExtractor.extractCurrentVideo(true)
       
       if (!videoData) {
         console.error('No video data found for quiz generation')
-        throw new Error('Unable to extract video information for quiz generation.')
+        throw new Error('No video data available')
       }
 
       console.log('🎯 Generating quiz question for:', {
@@ -201,6 +201,50 @@ export const ShortsDetector: React.FC = () => {
     console.log('Quiz skipped')
     setShowQuiz(false)
     setCurrentQuestion(null)
+  }
+
+  // Show loading state when generating quiz
+  if (isLoading) {
+    return (
+      <div style={{
+        position: 'fixed',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        zIndex: 999999,
+        backgroundColor: 'rgba(0, 0, 0, 0.9)',
+        color: 'white',
+        padding: '20px',
+        borderRadius: '12px',
+        textAlign: 'center',
+        fontFamily: 'system-ui, -apple-system, sans-serif',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)'
+      }}>
+        <div style={{
+          width: '40px',
+          height: '40px',
+          border: '3px solid #333',
+          borderTop: '3px solid #4CAF50',
+          borderRadius: '50%',
+          animation: 'spin 1s linear infinite',
+          margin: '0 auto 16px'
+        }}></div>
+        <div style={{ fontSize: '16px', fontWeight: '500' }}>
+          Generating quiz question...
+        </div>
+        <div style={{ fontSize: '14px', opacity: 0.7, marginTop: '8px' }}>
+          Analyzing video content
+        </div>
+        <style dangerouslySetInnerHTML={{
+          __html: `
+            @keyframes spin {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
+            }
+          `
+        }} />
+      </div>
+    )
   }
 
   // Only render if we should show the quiz
