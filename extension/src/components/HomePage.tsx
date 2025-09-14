@@ -2,16 +2,72 @@ import { useAuth } from '@/contexts/AuthContext'
 import { signOut } from 'firebase/auth'
 import { auth, functions } from '@/lib/firebase'
 import { httpsCallable } from 'firebase/functions'
+import { ShortsTracker } from '@/utils/shortsTracker'
+import { useState, useEffect } from 'react'
 import './HomePage.css'
 
 export default function HomePage() {
   const { user, profile } = useAuth()
+  const [selectedSubject, setSelectedSubject] = useState<string>('')
+  const [isStudyModeActive, setIsStudyModeActive] = useState(false)
+
+  // Load current study mode settings on component mount
+  useEffect(() => {
+    const loadStudyModeSettings = async () => {
+      try {
+        const currentSubject = await ShortsTracker.getSelectedSubject()
+        const settings = await ShortsTracker.getQuizSettings()
+        
+        if (currentSubject) {
+          setSelectedSubject(currentSubject)
+          setIsStudyModeActive(settings.enabled)
+        }
+      } catch (error) {
+        console.error('Failed to load study mode settings:', error)
+      }
+    }
+    
+    loadStudyModeSettings()
+  }, [])
 
   const handleSignOut = async () => {
     try {
       await signOut(auth)
     } catch (error) {
       console.error('Sign out failed:', error)
+    }
+  }
+
+  const startStudyMode = async () => {
+    if (!selectedSubject) {
+      alert('Please select a subject first!')
+      return
+    }
+
+    try {
+      // Save selected subject and enable quiz blocker
+      await ShortsTracker.setSelectedSubject(selectedSubject)
+      await ShortsTracker.updateQuizSettings({ enabled: true })
+      
+      setIsStudyModeActive(true)
+      
+      // Show confirmation
+      alert(`Study Mode activated for ${selectedSubject}! 🧠\n\nYou'll now get quiz questions while watching YouTube Shorts to help you learn.`)
+    } catch (error) {
+      console.error('Failed to start study mode:', error)
+      alert('Failed to start study mode. Please try again.')
+    }
+  }
+
+  const stopStudyMode = async () => {
+    try {
+      await ShortsTracker.updateQuizSettings({ enabled: false })
+      setIsStudyModeActive(false)
+      
+      alert('Study Mode deactivated. Enjoy your regular YouTube experience!')
+    } catch (error) {
+      console.error('Failed to stop study mode:', error)
+      alert('Failed to stop study mode. Please try again.')
     }
   }
 
@@ -204,9 +260,25 @@ ${JSON.stringify(err, null, 2)}
         {profile?.subjects && profile.subjects.length > 0 ? (
           <div className="subjects-overview">
             <h4>Your Study Subjects</h4>
+            <div className="subject-selector">
+              <label htmlFor="subject-select">Select Subject for Study Mode:</label>
+              <select
+                id="subject-select"
+                value={selectedSubject}
+                onChange={(e) => setSelectedSubject(e.target.value)}
+                className="subject-dropdown"
+              >
+                <option value="">Choose a subject...</option>
+                {profile.subjects.map((subject, index) => (
+                  <option key={index} value={subject.name}>
+                    {subject.name} ({subject.fileCount ?? 0} materials)
+                  </option>
+                ))}
+              </select>
+            </div>
             <div className="subjects-grid">
               {profile.subjects.map((subject, index) => (
-                <div key={index} className="subject-card">
+                <div key={index} className={`subject-card ${selectedSubject === subject.name ? 'selected' : ''}`}>
                   <h5>{subject.name}</h5>
                   <p>Study materials and progress tracking</p>
                   <div className="subject-stats">
@@ -230,10 +302,21 @@ ${JSON.stringify(err, null, 2)}
         )}
 
         <div className="actions">
-          <button className="action-button primary">
-            <span className="action-button-icon">🧠</span>
-            Study Mode
-          </button>
+          {isStudyModeActive ? (
+            <button className="action-button danger" onClick={stopStudyMode}>
+              <span className="action-button-icon">⏹️</span>
+              Stop Study Mode
+            </button>
+          ) : (
+            <button 
+              className="action-button primary" 
+              onClick={startStudyMode}
+              disabled={!selectedSubject}
+            >
+              <span className="action-button-icon">🧠</span>
+              Start Study Mode
+            </button>
+          )}
           <button className="action-button" onClick={openSettingsPage}>
             <span className="action-button-icon">⚙️</span>
             Settings

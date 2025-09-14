@@ -2,6 +2,7 @@
 export interface ShortsSettings {
   quizFrequency: number // Show quiz every N shorts (default: 5)
   enabled: boolean
+  selectedSubject?: string // Subject to use for quiz generation
 }
 
 export class ShortsTracker {
@@ -40,6 +41,28 @@ export class ShortsTracker {
     } catch (error) {
       console.error('Failed to get quiz settings:', error)
       return { quizFrequency: 5, enabled: true }
+    }
+  }
+
+  // Set selected subject for quiz generation
+  static async setSelectedSubject(subject: string): Promise<void> {
+    try {
+      const currentSettings = await this.getQuizSettings()
+      const newSettings = { ...currentSettings, selectedSubject: subject }
+      await chrome.storage.local.set({ [this.SETTINGS_KEY]: newSettings })
+    } catch (error) {
+      console.error('Failed to set selected subject:', error)
+    }
+  }
+
+  // Get selected subject for quiz generation
+  static async getSelectedSubject(): Promise<string | null> {
+    try {
+      const settings = await this.getQuizSettings()
+      return settings.selectedSubject || null
+    } catch (error) {
+      console.error('Failed to get selected subject:', error)
+      return null
     }
   }
   
