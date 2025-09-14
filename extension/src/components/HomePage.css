@@ -177,6 +177,38 @@
   display: inline-block;
 }
 
+.subject-selector {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: hsl(var(--background));
+  border-radius: 12px;
+  border: 1px solid hsl(var(--border));
+}
+
+.subject-selector label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+}
+
+.subject-dropdown {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 2px solid hsl(var(--border));
+  border-radius: 8px;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+.subject-dropdown:focus {
+  outline: none;
+  border-color: hsl(var(--primary));
+  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.1);
+}
+
 .subjects-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -192,6 +224,12 @@
   cursor: pointer;
   position: relative;
   overflow: hidden;
+}
+
+.subject-card.selected {
+  border-color: hsl(var(--primary));
+  background: hsl(var(--primary) / 0.05);
+  box-shadow: 0 0 0 2px hsl(var(--primary) / 0.2);
 }
 
 /* Removed excessive animations for professional presentation */

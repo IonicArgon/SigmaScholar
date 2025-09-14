@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import { QuizBlocker } from '../../components/QuizBlocker'
 import { ShortsTracker } from '../../utils/shortsTracker'
+import { VideoExtractor } from '../utils/videoExtractor'
+import { httpsCallable } from 'firebase/functions'
+import { functions } from '../../lib/firebase'
 
 interface QuizQuestion {
   id?: string
@@ -85,33 +88,85 @@ export const ShortsDetector: React.FC = () => {
     setIsLoading(true)
     
     try {
-      // For now, use your existing question generation system
-      // This should be replaced with your actual API call that returns the JSON format you showed
+      // Get the selected subject for quiz generation
+      const selectedSubject = await ShortsTracker.getSelectedSubject()
+      
+      if (!selectedSubject) {
+        console.error('No subject selected for quiz generation')
+        throw new Error('No subject selected. Please select a subject in Study Mode first.')
+      }
+
+      // Extract current video data
+      const videoData = VideoExtractor.extractCurrentVideo()
+      
+      if (!videoData) {
+        console.error('No video data found for quiz generation')
+        throw new Error('Unable to extract video information for quiz generation.')
+      }
+
+      console.log('🎯 Generating quiz question for:', {
+        subject: selectedSubject,
+        video: videoData.title
+      })
+
+      // Prepare YouTube context for the Firebase function
+      const youtubeContext = JSON.stringify({
+        title: videoData.title,
+        description: videoData.description || '',
+        channelName: videoData.author || 'Unknown',
+        transcript: videoData.transcript || ''
+      })
+
+      // Call Firebase function to generate quiz
+      const generateQuiz = httpsCallable(functions, 'generateQuiz')
+      const result = await generateQuiz({
+        subject: selectedSubject,
+        youtubeContext: youtubeContext
+      })
+
+      const data = result.data as any
+      const quiz = data.quiz || data
+
+      // Convert Firebase response to our QuizQuestion format
       const question: QuizQuestion = {
-        question: "Just like how you're procrastinating on your assignment by watching cat videos, imagine you're avoiding solving a first-order linear ODE. Which of these strategies would actually help you solve the equation \\(x^2 \\frac{dy}{dx} + e^x y = 3\\sin(x)\\) instead of just watching cats?",
-        type: "multiple_choice",
-        options: [
-          "Use the integrating factor method because the equation is linear and nonhomogeneous",
-          "Apply separation of variables since it's a simple trick for any ODE",
-          "Guess the solution by randomly meowing at your calculator",
-          "Transform it into a nonlinear equation to make it more interesting"
-        ],
-        correctAnswer: 0,
-        explanations: {
-          correct: "The equation \\(x^2 \\frac{dy}{dx} + e^x y = 3\\sin(x)\\) is a first-order linear nonhomogeneous ODE. The integrating factor method is the correct approach for solving such equations, as it directly addresses the linearity and nonhomogeneity.",
-          incorrect: [
-            "Separation of variables works for separable equations, but this one isn't separable due to the linear combination of \\(y\\) and \\(\\frac{dy}{dx}\\).",
-            "Random guessing (or meowing) won't solve a mathematical problem—it's as ineffective as procrastinating with cat videos.",
-            "Transforming a linear equation into a nonlinear one would complicate the problem unnecessarily and defeat the purpose of using established methods for linear ODEs."
-          ]
-        }
+        question: quiz.question,
+        type: quiz.type,
+        options: quiz.options,
+        correctAnswer: quiz.correctAnswer,
+        explanations: quiz.explanations
       }
       
       setCurrentQuestion(question)
       setShowQuiz(true)
       
+      console.log('✅ Quiz question generated successfully')
+      
     } catch (error) {
       console.error('Failed to load quiz question:', error)
+      
+      // Show fallback question if generation fails
+      const fallbackQuestion: QuizQuestion = {
+        question: "Study Mode is active, but we couldn't generate a question based on this video. What's the most important thing to remember about effective learning?",
+        type: "multiple_choice",
+        options: [
+          "Active engagement with material leads to better retention",
+          "Passive consumption is the best learning strategy",
+          "Multitasking while studying improves focus",
+          "Cramming is more effective than spaced repetition"
+        ],
+        correctAnswer: 0,
+        explanations: {
+          correct: "Active engagement with learning material, such as asking questions, taking notes, and connecting concepts, significantly improves retention and understanding compared to passive methods.",
+          incorrect: [
+            "Passive consumption without engagement leads to poor retention and shallow understanding.",
+            "Multitasking while studying actually decreases focus and learning effectiveness.",
+            "Spaced repetition over time is scientifically proven to be more effective than cramming for long-term retention."
+          ]
+        }
+      }
+      
+      setCurrentQuestion(fallbackQuestion)
+      setShowQuiz(true)
     } finally {
       setIsLoading(false)
     }
