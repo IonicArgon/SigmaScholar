@@ -18,6 +18,8 @@ export default defineManifest({
       48: 'public/SigmaScholar_Logo.png',
       128: 'public/SigmaScholar_Logo.png',
     },
+    default_title: 'Sigma Scholar',
+    default_popup: 'src/popup/index.html',
   },
   permissions: [
     'identity',
