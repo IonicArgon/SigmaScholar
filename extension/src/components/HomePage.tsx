@@ -11,6 +11,17 @@ export default function HomePage() {
   const { user, profile } = useAuth()
   const [selectedSubject, setSelectedSubject] = useState<string>('')
   const [isStudyModeActive, setIsStudyModeActive] = useState(false)
+  const [modal, setModal] = useState<{
+    isOpen: boolean
+    title: string
+    content: string
+    type: 'success' | 'error' | 'info' | 'warning'
+  }>({
+    isOpen: false,
+    title: '',
+    content: '',
+    type: 'info'
+  })
 
   // Load current study mode settings and migrate subjects on component mount
   useEffect(() => {
