@@ -149,6 +149,8 @@ export const QuizBlocker: React.FC<QuizBlockerProps> = ({
           <div className="floating-particle particle-1" />
           <div className="floating-particle particle-2" />
           <div className="floating-particle particle-3" />
+          <div className="floating-particle particle-4" />
+          <div className="floating-particle particle-5" />
         </div>
       </div>
     </div>

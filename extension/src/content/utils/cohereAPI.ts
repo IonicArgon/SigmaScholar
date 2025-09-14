@@ -6,6 +6,7 @@ export interface GeneratedQuestions {
   generatedAt: number
 }
 
+
 export class CohereAPI {
   private static readonly API_ENDPOINT = 'https://api.cohere.ai/v1/generate'
   
@@ -56,6 +57,7 @@ export class CohereAPI {
     }
   }
 
+
   private static buildPrompt(videoData: VideoData): string {
     const platformName = this.getPlatformDisplayName(videoData.platform)
     
@@ -82,6 +84,7 @@ Format your response as a numbered list:
 Questions:`
   }
 
+
   private static parseQuestions(generatedText: string): string[] {
     try {
       // Split by lines and filter out empty lines
@@ -106,9 +109,10 @@ Questions:`
       return questions.slice(0, 5) // Limit to 5 questions
     } catch (error) {
       console.error('Error parsing questions:', error)
-      return ['What are the main concepts discussed in this video?']
+      return ['What are the main concepts discussed in this video?', 'What is the primary topic of this video?', 'What is the main idea of this video?', 'What are the key points of this video?', 'What can you learn from this video?']
     }
   }
+
 
   private static getPlatformDisplayName(platform: VideoData['platform']): string {
     switch (platform) {
