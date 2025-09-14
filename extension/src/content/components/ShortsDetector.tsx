@@ -19,6 +19,9 @@ export const ShortsDetector: React.FC = () => {
   const [showQuiz, setShowQuiz] = useState(false)
   const [currentQuestion, setCurrentQuestion] = useState<QuizQuestion | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [incorrectQuestions, setIncorrectQuestions] = useState<QuizQuestion[]>([])
+  const [questionsUntilRetry, setQuestionsUntilRetry] = useState(0)
+  const [wasVideoPaused, setWasVideoPaused] = useState(false)
 
   useEffect(() => {
     // Detect when user scrolls to a new short
@@ -82,10 +85,39 @@ export const ShortsDetector: React.FC = () => {
     }
   }
 
+  // YouTube video control functions
+  const pauseYouTubeVideo = () => {
+    const video = document.querySelector('video') as HTMLVideoElement
+    if (video && !video.paused) {
+      setWasVideoPaused(false)
+      video.pause()
+    } else if (video && video.paused) {
+      setWasVideoPaused(true)
+    }
+  }
+
+  const resumeYouTubeVideo = () => {
+    const video = document.querySelector('video') as HTMLVideoElement
+    if (video && !wasVideoPaused) {
+      video.play()
+    }
+  }
+
   const loadAndShowQuiz = async () => {
     setIsLoading(true)
     
     try {
+      // Check if we should show a retry question first
+      if (questionsUntilRetry === 0 && incorrectQuestions.length > 0) {
+        const retryQuestion = incorrectQuestions.shift()!
+        setIncorrectQuestions([...incorrectQuestions])
+        setCurrentQuestion(retryQuestion)
+        setShowQuiz(true)
+        setIsLoading(false)
+        pauseYouTubeVideo()
+        return
+      }
+
       // Get the selected subject for quiz generation
       const selectedSubject = await ShortsTracker.getSelectedSubject()
       
@@ -148,6 +180,7 @@ export const ShortsDetector: React.FC = () => {
       
       setCurrentQuestion(question)
       setShowQuiz(true)
+      pauseYouTubeVideo()
       
       console.log('✅ Quiz question generated successfully')
       
