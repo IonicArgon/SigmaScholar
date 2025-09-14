@@ -305,12 +305,6 @@ export const ShortsDetector: React.FC = () => {
     resumeYouTubeVideo()
   }
 
-  const handleQuizSkip = () => {
-    // Quiz skipped
-    setShowQuiz(false)
-    setCurrentQuestion(null)
-    resumeYouTubeVideo()
-  }
 
   // Add navigation blocking during loading
   useEffect(() => {
@@ -429,7 +423,6 @@ export const ShortsDetector: React.FC = () => {
     <QuizBlocker
       question={questionForBlocker}
       onComplete={handleQuizComplete}
-      onSkip={handleQuizSkip}
     />
   ) : null
 }
