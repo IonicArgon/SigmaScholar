@@ -7,6 +7,21 @@ import { firestore } from '../lib/firebase'
 const cohereApiKey = defineSecret('COHERE_API_KEY')
 
 /**
+ * Preprocesses LaTeX content to ensure proper formatting and escaping
+ */
+function preprocessLatex(text: string): string {
+  // Fix common LaTeX formatting issues
+  return text
+    // Ensure proper spacing around math delimiters
+    .replace(/\$([^$]+)\$/g, ' $$$1$$ ')
+    // Fix double backslashes for LaTeX commands in JSON
+    .replace(/\\([a-zA-Z]+)/g, '\\\\$1')
+    // Clean up extra spaces
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+/**
  * Generate a quiz question using document context and YouTube context
  */
 async function generateQuizQuestion(userId: string, subject: string, youtubeContext: string): Promise<any> {
@@ -58,23 +73,27 @@ Requirements:
 4. Always return valid JSON format
 5. Include explanations for all answers
 6. Wrong answers should not be explicitly marked or easily guessable
-7. For mathematical expressions, use AsciiMath notation wrapped in backticks. Examples:
-   - Quadratic formula: \`x = (-b +- sqrt(b^2 - 4ac))/(2a)\`
-   - Fractions: \`(x+1)/(x-1)\`
-   - Integrals: \`int_0^1 f(x) dx\`
-   - Matrices: \`[[a,b],[c,d]]\`
-   - Greek letters: \`alpha, beta, gamma, pi, theta\`
-   - Subscripts/superscripts: \`x_1^2, H_2O, CO_2\`
-   Always use AsciiMath for any mathematical content to ensure proper rendering.
+7. For mathematical content, use proper LaTeX formatting:
+   - Wrap all math expressions in $ for inline math or $$ for display math
+   - Use proper LaTeX syntax: \\frac{a}{b}, \\sqrt{x}, x^2, x_n, \\int, \\sum, etc.
+   - For complex expressions: $$\\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$$
+   - Greek letters: \\alpha, \\beta, \\gamma, \\pi, \\theta, etc.
+   - Special symbols: \\infty, \\neq, \\leq, \\geq, \\in, \\subset, etc.
+   - Matrices: \\begin{pmatrix} a & b \\\\ c & d \\end{pmatrix}
+8. For chemistry, use proper notation:
+   - Subscripts: H_2O, CH_3COOH
+   - Superscripts for charges: Ca^{2+}, SO_4^{2-}
+   - Reaction arrows: \\rightarrow or \\leftrightarrow
+9. Escape backslashes properly in JSON strings (use \\\\ for LaTeX backslashes)
 
 JSON Response Format:
 {
-  "question": "The question text",
+  "question": "The question text with $LaTeX$ formatting",
   "type": "multiple_choice" | "true_false",
-  "options": ["Option A", "Option B", "Option C", "Option D"] | ["True", "False"],
+  "options": ["Option A with $math$", "Option B", "Option C", "Option D"] | ["True", "False"],
   "correctAnswer": 0,
   "explanations": {
-    "correct": "Why the correct answer is right",
+    "correct": "Why the correct answer is right with $LaTeX$ if needed",
     "incorrect": ["Why option 0 is wrong", "Why option 1 is wrong", ...]
   }
 }`
@@ -115,7 +134,7 @@ YOUTUBE VIDEO CONTEXT (JSON):
         {
           role: 'assistant',
           content: `{
-  "question": "Just like that orange cat trying to squeeze into an impossibly small box, what happens when the discriminant b² - 4ac in the quadratic formula is negative?",
+  "question": "Just like that orange cat trying to squeeze into an impossibly small box, what happens when the discriminant $b^2 - 4ac$ in the quadratic formula is negative?",
   "type": "multiple_choice",
   "options": [
     "The equation has exactly one real solution",
@@ -125,10 +144,10 @@ YOUTUBE VIDEO CONTEXT (JSON):
   ],
   "correctAnswer": 2,
   "explanations": {
-    "correct": "When the discriminant is negative, just like that stubborn cat refusing to accept reality, the equation produces complex (imaginary) solutions instead of real ones. The math still works, it's just living in imagination land!",
+    "correct": "When the discriminant $b^2 - 4ac < 0$, just like that stubborn cat refusing to accept reality, the equation produces complex (imaginary) solutions instead of real ones. The quadratic formula $x = \\\\frac{-b \\\\pm \\\\sqrt{b^2 - 4ac}}{2a}$ still works, it's just living in imagination land!",
     "incorrect": [
-      "One real solution happens when the discriminant equals zero - that's when the cat actually fits perfectly in the box",
-      "Two real solutions occur when the discriminant is positive - like having multiple boxes that actually fit the cat",
+      "One real solution happens when the discriminant equals zero ($b^2 - 4ac = 0$) - that's when the cat actually fits perfectly in the box",
+      "Two real solutions occur when the discriminant is positive ($b^2 - 4ac > 0$) - like having multiple boxes that actually fit the cat",
       "",
       "The quadratic formula never breaks down, it just gets creative with complex numbers when reality doesn't cooperate"
     ]
@@ -153,7 +172,7 @@ YOUTUBE VIDEO CONTEXT (JSON):
         {
           role: 'assistant',
           content: `{
-  "question": "Unlike those epic parkour fails where people think they can defy physics, alcohol metabolism in your liver actually follows chemistry rules. What does ethanol (CH₃CH₂OH) need to successfully transform into acetic acid without face-planting?",
+  "question": "Unlike those epic parkour fails where people think they can defy physics, alcohol metabolism in your liver actually follows chemistry rules. What does ethanol ($CH_3CH_2OH$) need to successfully transform into acetic acid without face-planting?",
   "type": "multiple_choice",
   "options": [
     "Oxygen and specific enzymes (the proper landing technique)",
@@ -163,7 +182,7 @@ YOUTUBE VIDEO CONTEXT (JSON):
   ],
   "correctAnswer": 0,
   "explanations": {
-    "correct": "Just like those successful parkour videos need proper technique AND timing, ethanol oxidation needs both oxygen (O₂) and specific liver enzymes to stick the landing and produce acetic acid without failing spectacularly.",
+    "correct": "Just like those successful parkour videos need proper technique AND timing, ethanol oxidation needs both oxygen ($O_2$) and specific liver enzymes to stick the landing and produce acetic acid ($CH_3COOH$) without failing spectacularly. The reaction is: $CH_3CH_2OH + O_2 \\\\rightarrow CH_3COOH + H_2O$",
     "incorrect": [
       "",
       "High temperature isn't needed - this isn't a concrete-melting fail compilation, it's a smooth enzymatic reaction at body temperature",
@@ -217,7 +236,7 @@ YOUTUBE VIDEO CONTEXT (JSON):
         }
       ],
       maxTokens: 2500,
-      temperature: 0.3
+      temperature: 0.5
     })
     
     // Extract and parse the JSON response
@@ -242,6 +261,26 @@ YOUTUBE VIDEO CONTEXT (JSON):
     
     // Parse JSON response
     const quizQuestion = JSON.parse(responseText)
+    
+    // Apply LaTeX preprocessing to all text fields
+    if (quizQuestion.question) {
+      quizQuestion.question = preprocessLatex(quizQuestion.question)
+    }
+    
+    if (quizQuestion.options && Array.isArray(quizQuestion.options)) {
+      quizQuestion.options = quizQuestion.options.map((option: string) => preprocessLatex(option))
+    }
+    
+    if (quizQuestion.explanations) {
+      if (quizQuestion.explanations.correct) {
+        quizQuestion.explanations.correct = preprocessLatex(quizQuestion.explanations.correct)
+      }
+      if (quizQuestion.explanations.incorrect && Array.isArray(quizQuestion.explanations.incorrect)) {
+        quizQuestion.explanations.incorrect = quizQuestion.explanations.incorrect.map((explanation: string) => 
+          explanation ? preprocessLatex(explanation) : explanation
+        )
+      }
+    }
     
     console.log(`[generateQuizQuestion] Generated quiz question for subject: ${subject}`)
     return quizQuestion

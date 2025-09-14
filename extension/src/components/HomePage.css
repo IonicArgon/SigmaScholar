@@ -252,45 +252,60 @@
 }
 
 .subject-card {
-  padding: 16px;
-  background: hsl(var(--background));
+  padding: 24px;
+  background: hsl(var(--surface));
   border: 1px solid hsl(var(--border));
-  border-radius: 12px;
-  transition: all var(--transition-elastic);
+  border-radius: 16px;
   cursor: pointer;
+  transition: all 0.5s ease;
   position: relative;
   overflow: hidden;
+  backdrop-filter: blur(10px);
 }
-
-.subject-card.selected {
-  border-color: hsl(var(--primary));
-  background: hsl(var(--primary) / 0.05);
-  box-shadow: 0 0 0 2px hsl(var(--primary) / 0.2);
-}
-
-/* Removed excessive animations for professional presentation */
 
 .subject-card::before {
-  content: '';
   position: absolute;
+  content: '';
+  left: 0;
+  bottom: 0;
+  height: 4px;
+  width: 100%;
+  border-bottom: 4px solid transparent;
+  border-left: 4px solid transparent;
+  box-sizing: border-box;
+  transform: translateX(100%);
+}
+
+.subject-card::after {
+  position: absolute;
+  content: '';
   top: 0;
   left: 0;
-  width: 4px;
-  height: 100%;
-  background: var(--gradient-primary);
-  transition: width 0.6s cubic-bezier(0.6, 0, 0.2, 1);
+  width: 100%;
+  height: 4px;
+  border-top: 4px solid transparent;
+  border-right: 4px solid transparent;
+  box-sizing: border-box;
+  transform: translateX(-100%);
 }
 
 .subject-card:hover {
-  background: hsl(var(--surface));
-  border-color: hsl(var(--primary) / 0.3);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.25);
 }
 
 .subject-card:hover::before {
-  width: 100%;
-  opacity: 0.05;
+  border-color: #667eea;
+  height: 100%;
+  transform: translateX(0);
+  transition: 0.3s transform ease, 0.3s height ease 0.3s;
+}
+
+.subject-card:hover::after {
+  border-color: #4facfe;
+  height: 100%;
+  transform: translateX(0);
+  transition: 0.3s transform ease, 0.3s height ease 0.5s;
 }
 
 .subject-card h5 {
@@ -362,9 +377,9 @@
   padding: 16px 20px;
   border-radius: 12px;
   font-size: 15px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: all 250ms ease;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -372,13 +387,31 @@
   text-align: left;
   position: relative;
   overflow: hidden;
+  z-index: 1;
+  box-shadow: 4px 8px 19px -3px rgba(0,0,0,0.15);
+}
+
+.action-button::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 0;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  z-index: -1;
+  transition: all 250ms ease;
 }
 
 .action-button:hover {
-  background: hsl(var(--surface-hover));
-  border-color: hsl(var(--border-hover));
+  color: white;
   transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  box-shadow: 4px 8px 25px -3px rgba(102, 126, 234, 0.3);
+}
+
+.action-button:hover::before {
+  width: 100%;
 }
 
 .action-button.primary {
@@ -388,9 +421,13 @@
   font-weight: 600;
 }
 
+.action-button.primary::before {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
 .action-button.primary:hover {
   transform: translateY(-2px);
-  box-shadow: var(--shadow-lg), var(--shadow-glow);
+  box-shadow: 4px 8px 25px -3px rgba(79, 172, 254, 0.4);
 }
 
 .action-button.danger {
@@ -398,10 +435,14 @@
   border-color: hsl(var(--error) / 0.3);
 }
 
+.action-button.danger::before {
+  background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%);
+}
+
 .action-button.danger:hover {
-  background: hsl(var(--error) / 0.1);
+  color: white;
   border-color: hsl(var(--error));
-  color: hsl(var(--error));
+  box-shadow: 4px 8px 25px -3px rgba(245, 87, 108, 0.3);
 }
 
 .action-button-icon {
