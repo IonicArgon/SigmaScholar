@@ -87,19 +87,68 @@ export const ShortsDetector: React.FC = () => {
 
   // YouTube video control functions
   const pauseYouTubeVideo = () => {
-    const video = document.querySelector('video') as HTMLVideoElement
-    if (video && !video.paused) {
-      setWasVideoPaused(false)
-      video.pause()
-    } else if (video && video.paused) {
-      setWasVideoPaused(true)
+    // Try multiple selectors for YouTube Shorts video
+    const selectors = [
+      'video',
+      '.html5-video-player video',
+      '#shorts-player video',
+      '[data-layer="4"] video',
+      '.ytd-shorts video'
+    ]
+    
+    let video: HTMLVideoElement | null = null
+    for (const selector of selectors) {
+      video = document.querySelector(selector) as HTMLVideoElement
+      if (video) break
+    }
+    
+    if (video) {
+      console.log('🎵 Video found, current state:', video.paused ? 'paused' : 'playing')
+      if (!video.paused) {
+        setWasVideoPaused(false)
+        video.pause()
+        console.log('⏸️ Video paused for quiz')
+      } else {
+        setWasVideoPaused(true)
+        console.log('⏸️ Video was already paused')
+      }
+    } else {
+      console.log('❌ No video element found with any selector')
+      // Try again after a short delay
+      setTimeout(() => {
+        const retryVideo = document.querySelector('video') as HTMLVideoElement
+        if (retryVideo && !retryVideo.paused) {
+          setWasVideoPaused(false)
+          retryVideo.pause()
+          console.log('⏸️ Video paused for quiz (retry)')
+        }
+      }, 500)
     }
   }
 
   const resumeYouTubeVideo = () => {
-    const video = document.querySelector('video') as HTMLVideoElement
-    if (video && !wasVideoPaused) {
-      video.play()
+    const selectors = [
+      'video',
+      '.html5-video-player video',
+      '#shorts-player video',
+      '[data-layer="4"] video',
+      '.ytd-shorts video'
+    ]
+    
+    let video: HTMLVideoElement | null = null
+    for (const selector of selectors) {
+      video = document.querySelector(selector) as HTMLVideoElement
+      if (video) break
+    }
+    
+    if (video) {
+      console.log('🎵 Resuming video, was originally paused:', wasVideoPaused)
+      if (!wasVideoPaused) {
+        video.play().catch(e => console.log('Play failed:', e))
+        console.log('▶️ Video resumed')
+      }
+    } else {
+      console.log('❌ No video element found for resume')
     }
   }
 
