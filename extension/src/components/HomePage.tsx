@@ -1,6 +1,7 @@
 import { useAuth } from '@/contexts/AuthContext'
 import { signOut } from 'firebase/auth'
-import { auth } from '@/lib/firebase'
+import { auth, db } from '@/lib/firebase'
+import { onSnapshot, collection, query, where, getDocs } from 'firebase/firestore'
 import { ShortsTracker } from '@/utils/shortsTracker'
 import { StudySessionManager } from '@/utils/studySessionManager'
 import { useState, useEffect } from 'react'
@@ -22,6 +23,7 @@ export default function HomePage() {
     content: '',
     type: 'info'
   })
+  const [subjectSessionCounts, setSubjectSessionCounts] = useState<Record<string, number>>({})
 
   // Load current study mode settings and migrate subjects on component mount
   useEffect(() => {
@@ -146,6 +148,88 @@ export default function HomePage() {
     window.close()
   }
 
+  // Set up real-time listeners for subject session counts
+  useEffect(() => {
+    if (!user?.uid) return
+
+    const setupSubjectListeners = async () => {
+      try {
+        // Query all subjects for this user
+        const subjectsQuery = query(
+          collection(db, 'subjects'),
+          where('userId', '==', user.uid)
+        )
+        
+        const snapshot = await getDocs(subjectsQuery)
+        const unsubscribers: (() => void)[] = []
+
+        // Set up real-time listeners for each subject
+        snapshot.docs.forEach((subjectDoc) => {
+          const subjectData = subjectDoc.data()
+          const subjectName = subjectData.name
+          
+          // Set initial session count
+          setSubjectSessionCounts(prev => ({
+            ...prev,
+            [subjectName]: subjectData.sessionCount || 0
+          }))
+
+          // Set up real-time listener for this subject
+          const unsubscribe = onSnapshot(subjectDoc.ref, (doc) => {
+            if (doc.exists()) {
+              const data = doc.data()
+              setSubjectSessionCounts(prev => ({
+                ...prev,
+                [subjectName]: data.sessionCount || 0
+              }))
+            }
+          }, (error) => {
+            console.error(`Error listening to subject ${subjectName}:`, error)
+          })
+
+          unsubscribers.push(unsubscribe)
+        })
+
+        // Store unsubscribers for cleanup
+        return () => {
+          unsubscribers.forEach(unsubscribe => unsubscribe())
+        }
+      } catch (error) {
+        console.error('Error setting up subject listeners:', error)
+      }
+    }
+
+    const cleanupPromise = setupSubjectListeners()
+    
+    // Cleanup function
+    return () => {
+      cleanupPromise.then(cleanup => cleanup?.())
+    }
+  }, [user?.uid])
+
+  // Handle extension lifecycle to end active study sessions
+  useEffect(() => {
+    const handleExtensionSuspend = async () => {
+      if (await StudySessionManager.hasActiveSession()) {
+        try {
+          await StudySessionManager.endSession()
+        } catch (error) {
+          console.error('Failed to end session on extension suspend:', error)
+        }
+      }
+    }
+
+    // Listen for extension suspend/shutdown events
+    if (chrome?.runtime?.onSuspend) {
+      chrome.runtime.onSuspend.addListener(handleExtensionSuspend)
+    }
+
+    return () => {
+      if (chrome?.runtime?.onSuspend) {
+        chrome.runtime.onSuspend.removeListener(handleExtensionSuspend)
+      }
+    }
+  }, [])
 
   return (
     <div className="home-container">
@@ -206,7 +290,7 @@ export default function HomePage() {
                       <span>📚 {subject.fileCount ?? 0} materials</span>
                     </div>
                     <div className="subject-stat">
-                      <span>📊 {subject.sessionCount ?? 0} study sessions</span>
+                      <span>📊 {subjectSessionCounts[subject.name] ?? 0} study sessions</span>
                     </div>
                   </div>
                 </div>

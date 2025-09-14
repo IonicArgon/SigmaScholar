@@ -306,6 +306,41 @@ export const ShortsDetector: React.FC = () => {
   }
 
 
+  // Add navigation blocking during loading
+  useEffect(() => {
+    if (!isLoading) return
+
+    const preventNavigation = (e: KeyboardEvent) => {
+      // Block arrow keys and navigation keys during loading
+      if ([37, 38, 39, 40, 33, 34, 35, 36].includes(e.keyCode)) {
+        e.preventDefault()
+        e.stopPropagation()
+      }
+    }
+
+    const preventScroll = (e: WheelEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+    }
+
+    const preventTouch = (e: TouchEvent) => {
+      if (e.touches.length > 1) return // Allow pinch zoom
+      e.preventDefault()
+      e.stopPropagation()
+    }
+
+    // Add event listeners during loading
+    document.addEventListener('keydown', preventNavigation, { capture: true })
+    document.addEventListener('wheel', preventScroll, { passive: false, capture: true })
+    document.addEventListener('touchmove', preventTouch, { passive: false, capture: true })
+
+    return () => {
+      document.removeEventListener('keydown', preventNavigation, { capture: true })
+      document.removeEventListener('wheel', preventScroll, { capture: true })
+      document.removeEventListener('touchmove', preventTouch, { capture: true })
+    }
+  }, [isLoading])
+
   // Show loading state when generating quiz
   if (isLoading) {
     return (

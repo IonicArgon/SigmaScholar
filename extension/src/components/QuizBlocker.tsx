@@ -26,6 +26,63 @@ export const QuizBlocker: React.FC<QuizBlockerProps> = ({
   useEffect(() => {
     // Trigger entrance animation
     setTimeout(() => setMounted(true), 50)
+
+    // Prevent navigation only if the event target is not within the quiz container
+    const preventNavigation = (e: KeyboardEvent) => {
+      const target = e.target as Element
+      const quizContainer = document.querySelector('.quiz-blocker-container')
+      
+      // Allow navigation within the quiz container
+      if (quizContainer && quizContainer.contains(target)) {
+        return
+      }
+      
+      // Block arrow keys and navigation keys for YouTube
+      if ([37, 38, 39, 40, 33, 34, 35, 36].includes(e.keyCode)) {
+        e.preventDefault()
+        e.stopPropagation()
+      }
+    }
+
+    const preventScroll = (e: WheelEvent) => {
+      const target = e.target as Element
+      const quizContainer = document.querySelector('.quiz-blocker-container')
+      
+      // Allow scrolling within the quiz container
+      if (quizContainer && quizContainer.contains(target)) {
+        return
+      }
+      
+      // Block scrolling on YouTube content
+      e.preventDefault()
+      e.stopPropagation()
+    }
+
+    const preventTouch = (e: TouchEvent) => {
+      const target = e.target as Element
+      const quizContainer = document.querySelector('.quiz-blocker-container')
+      
+      // Allow touch within the quiz container
+      if (quizContainer && quizContainer.contains(target)) {
+        return
+      }
+      
+      if (e.touches.length > 1) return // Allow pinch zoom
+      e.preventDefault()
+      e.stopPropagation()
+    }
+
+    // Add event listeners to prevent navigation
+    document.addEventListener('keydown', preventNavigation, { capture: true })
+    document.addEventListener('wheel', preventScroll, { passive: false, capture: true })
+    document.addEventListener('touchmove', preventTouch, { passive: false, capture: true })
+
+    // Cleanup function
+    return () => {
+      document.removeEventListener('keydown', preventNavigation, { capture: true })
+      document.removeEventListener('wheel', preventScroll, { capture: true })
+      document.removeEventListener('touchmove', preventTouch, { capture: true })
+    }
   }, [])
 
   const handleAnswerSelect = (answerIndex: number) => {
