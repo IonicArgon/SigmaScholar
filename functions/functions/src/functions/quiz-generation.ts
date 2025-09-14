@@ -58,6 +58,7 @@ Requirements:
 4. Always return valid JSON format
 5. Include explanations for all answers
 6. Wrong answers should not be explicitly marked or easily guessable
+7. For math content, use clear spacing and standard notation (e.g., "b² - 4ac", "x^2 + 2x + 1") for better readability. Blackboard bold math symbols should be wrapped with <b></b> tags.
 
 JSON Response Format:
 {
@@ -214,9 +215,23 @@ YOUTUBE VIDEO CONTEXT (JSON):
     
     // Extract and parse the JSON response
     const messageContent = response.message?.content?.[0]
-    const responseText = messageContent && 'text' in messageContent ? messageContent.text : ''
+    let responseText = ''
+    
+    if (messageContent && 'text' in messageContent) {
+      responseText = messageContent.text
+    } else {
+      throw new Error('Invalid response format from Cohere API')
+    }
+    
+    responseText = responseText.trim()
     
     console.log(`[generateQuizQuestion] Raw response: ${responseText}`)
+    
+    // Clean up any potential JSON formatting issues with KaTeX
+    // Replace problematic escape sequences that might break JSON parsing
+    responseText = responseText.replace(/\\(?!["\\/bfnrt])/g, '\\\\')
+    
+    console.log(`[generateQuizQuestion] Cleaned response: ${responseText}`)
     
     // Parse JSON response
     const quizQuestion = JSON.parse(responseText)

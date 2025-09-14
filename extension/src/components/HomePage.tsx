@@ -103,6 +103,15 @@ ${JSON.stringify(data, null, 2)}
                 .wrong { color: #dc2626; }
                 .explanation { color: #374151; font-style: italic; }
                 pre { background: #1f2937; color: #f9fafb; padding: 15px; border-radius: 5px; overflow-x: auto; }
+                /* Math content styling for better readability */
+                .math-content { 
+                  font-family: 'Times New Roman', serif; 
+                  font-size: 1.1em; 
+                  letter-spacing: 0.5px; 
+                  padding: 2px 4px; 
+                  background: #f8f9fa; 
+                  border-radius: 3px; 
+                }
               </style>
             </head>
             <body>
