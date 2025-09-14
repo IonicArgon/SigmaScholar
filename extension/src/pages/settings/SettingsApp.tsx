@@ -35,11 +35,7 @@ const SettingsApp: React.FC = () => {
   // File processing status
   const { 
     files: processingFiles, 
-    stats: processingStats, 
-    loading: processingLoading,
-    getFilesBySubject,
-    getSubjectProcessingStats,
-    isSubjectReadyForStudy
+    stats: processingStats
   } = useFileProcessingStatus()
   
   // Debug logging
@@ -55,6 +51,8 @@ const SettingsApp: React.FC = () => {
   
   // File management state
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null)
+  const [uploadingToSubject, setUploadingToSubject] = useState<string | null>(null)
+  const [subjectUploadFiles, setSubjectUploadFiles] = useState<{[key: string]: FileList | null}>({})
 
   // Quiz settings state
   const [quizSettings, setQuizSettings] = useState<ShortsSettings>({ quizFrequency: 5, enabled: true })
@@ -150,28 +148,7 @@ const SettingsApp: React.FC = () => {
       
       // Then upload files to the subject
       const fileArray = Array.from(selectedFiles)
-      
-      // Convert files to the format expected by the backend
-      const filesData = await Promise.all(
-        fileArray.map(async (file) => {
-          return new Promise<{name: string, size: number, type: string, data: string}>((resolve, reject) => {
-            const reader = new FileReader()
-            reader.onload = () => resolve({
-              name: file.name,
-              size: file.size,
-              type: file.type,
-              data: reader.result as string
-            })
-            reader.onerror = reject
-            reader.readAsDataURL(file)
-          })
-        })
-      )
-      
-      await addFilesToSubject({
-        subjectName: newSubjectName.trim(),
-        files: filesData
-      })
+      await addFilesToSubject(fileArray)
       
       setNewSubjectName('')
       setSelectedFiles(null)
@@ -209,6 +186,51 @@ const SettingsApp: React.FC = () => {
     } catch (err) {
       console.error('Error removing file:', err)
       setError('Failed to remove file. Please try again.')
+    }
+  }
+
+  const uploadFilesToExistingSubject = async (subjectName: string) => {
+    const files = subjectUploadFiles[subjectName]
+    if (!user || !files || files.length === 0) return
+    
+    try {
+      setUploadingToSubject(subjectName)
+      
+      // Convert files to the format expected by the backend function
+      const filePromises = Array.from(files).map(file => {
+        return new Promise<{name: string, size: number, type: string, data: string}>((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = () => {
+            resolve({
+              name: file.name,
+              size: file.size,
+              type: file.type,
+              data: reader.result as string
+            })
+          }
+          reader.onerror = reject
+          reader.readAsDataURL(file)
+        })
+      })
+      
+      const fileData = await Promise.all(filePromises)
+      
+      // Call the backend function
+      await addFilesToSubject({
+        subjectName,
+        files: fileData
+      })
+      
+      // Clear the selected files for this subject
+      setSubjectUploadFiles(prev => ({ ...prev, [subjectName]: null }))
+      
+      // Reload user data to show the new files
+      await loadUserData()
+    } catch (err) {
+      console.error('Error uploading files to subject:', err)
+      setError('Failed to upload files to subject. Please try again.')
+    } finally {
+      setUploadingToSubject(null)
     }
   }
 
@@ -606,6 +628,50 @@ const SettingsApp: React.FC = () => {
                           >
                             Delete Subject
                           </button>
+                        </div>
+                      </div>
+                      
+                      {/* File upload section for existing subject */}
+                      <div className="add-files-section">
+                        <div className="add-files-form">
+                          <div className="file-input-wrapper">
+                            <input
+                              type="file"
+                              multiple
+                              id={`files-${subject.name}`}
+                              onChange={(e) => setSubjectUploadFiles(prev => ({ 
+                                ...prev, 
+                                [subject.name]: e.target.files 
+                              }))}
+                              disabled={uploadingToSubject === subject.name}
+                              style={{ display: 'none' }}
+                            />
+                            <div 
+                              className={`file-input-button small ${uploadingToSubject === subject.name ? 'disabled' : ''}`}
+                              onClick={() => {
+                                if (uploadingToSubject !== subject.name) {
+                                  document.getElementById(`files-${subject.name}`)?.click()
+                                }
+                              }}
+                            >
+                              <span className="file-input-icon">📁</span>
+                              <span className={`file-input-text ${subjectUploadFiles[subject.name] && subjectUploadFiles[subject.name]!.length > 0 ? 'has-files' : ''}`}>
+                                {subjectUploadFiles[subject.name] && subjectUploadFiles[subject.name]!.length > 0 
+                                  ? `${subjectUploadFiles[subject.name]!.length} file${subjectUploadFiles[subject.name]!.length > 1 ? 's' : ''} selected`
+                                  : 'Add more files'
+                                }
+                              </span>
+                            </div>
+                            {subjectUploadFiles[subject.name] && subjectUploadFiles[subject.name]!.length > 0 && (
+                              <button 
+                                onClick={() => uploadFilesToExistingSubject(subject.name)}
+                                disabled={uploadingToSubject === subject.name}
+                                className="upload-button small"
+                              >
+                                {uploadingToSubject === subject.name ? 'Uploading...' : 'Upload Files'}
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </div>
                       {subject.files.length === 0 ? (
