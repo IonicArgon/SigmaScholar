@@ -165,7 +165,7 @@ export default function HomePage() {
                 <div 
                   key={index} 
                   className={`subject-card ${selectedSubject === subject.name ? 'selected' : ''}`}
-                  onClick={() => setSelectedSubject(subject.name)}
+                  onClick={() => changeSubject(subject.name)}
                 >
                   <h5>{subject.name}</h5>
                   <p>Study materials and progress tracking</p>
