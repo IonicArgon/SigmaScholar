@@ -441,11 +441,15 @@ const SettingsApp: React.FC = () => {
               </div>
               <div className="profile-field">
                 <label>Email:</label>
-                <span>{userData.profile.email}</span>
+                <div className="display-field">
+                  <span>{userData.profile.email}</span>
+                </div>
               </div>
               <div className="profile-field">
                 <label>Member Since:</label>
-                <span>{new Date(userData.profile.createdAt).toLocaleDateString()}</span>
+                <div className="display-field">
+                  <span>{new Date(userData.profile.createdAt).toLocaleDateString()}</span>
+                </div>
               </div>
             </div>
           </div>
