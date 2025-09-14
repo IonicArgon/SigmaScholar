@@ -73,27 +73,28 @@ Requirements:
 4. Always return valid JSON format
 5. Include explanations for all answers
 6. Wrong answers should not be explicitly marked or easily guessable
-7. For mathematical content, use proper LaTeX formatting:
-   - Wrap all math expressions in $ for inline math or $$ for display math
-   - Use proper LaTeX syntax: \\frac{a}{b}, \\sqrt{x}, x^2, x_n, \\int, \\sum, etc.
-   - For complex expressions: $$\\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$$
-   - Greek letters: \\alpha, \\beta, \\gamma, \\pi, \\theta, etc.
-   - Special symbols: \\infty, \\neq, \\leq, \\geq, \\in, \\subset, etc.
-   - Matrices: \\begin{pmatrix} a & b \\\\ c & d \\end{pmatrix}
-8. For chemistry, use proper notation:
-   - Subscripts: H_2O, CH_3COOH
-   - Superscripts for charges: Ca^{2+}, SO_4^{2-}
-   - Reaction arrows: \\rightarrow or \\leftrightarrow
-9. Escape backslashes properly in JSON strings (use \\\\ for LaTeX backslashes)
+7. For mathematical content, use AsciiMath notation with proper spacing for readability:
+   - Use AsciiMath syntax: (a + b) / c, sqrt(x), x^2, x_n, int, sum, etc.
+   - For fractions: (a + b) / (c + d) or (-b +- sqrt(b^2 - 4ac)) / (2a)
+   - Greek letters: alpha, beta, gamma, pi, theta, etc.
+   - Special symbols: oo (infinity), != (not equal), <= (less equal), >= (greater equal), in, subset, etc.
+   - Matrices: [[a, b], [c, d]] or use spacing like:  [ a  b ]
+                                                      [ c  d ]
+   - Add spaces around operators for clarity: a + b, x = y, f(x) = 2x + 1
+8. For chemistry, use clear notation with proper spacing:
+   - Subscripts: H_2 O, CH_3 COOH (with spaces for readability)
+   - Superscripts for charges: Ca^(2+), SO_4^(2-)
+   - Reaction arrows: -> or <->
+9. Do not use any special formatting markers or backticks - just write the math as plain readable text
 
 JSON Response Format:
 {
-  "question": "The question text with $LaTeX$ formatting",
+  "question": "The question text with AsciiMath notation",
   "type": "multiple_choice" | "true_false",
-  "options": ["Option A with $math$", "Option B", "Option C", "Option D"] | ["True", "False"],
+  "options": ["Option A with math notation", "Option B", "Option C", "Option D"] | ["True", "False"],
   "correctAnswer": 0,
   "explanations": {
-    "correct": "Why the correct answer is right with $LaTeX$ if needed",
+    "correct": "Why the correct answer is right with AsciiMath if needed",
     "incorrect": ["Why option 0 is wrong", "Why option 1 is wrong", ...]
   }
 }`
