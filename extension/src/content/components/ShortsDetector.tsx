@@ -82,12 +82,9 @@ export const ShortsDetector: React.FC = () => {
       
       // Check if quiz should be shown
       const shouldShow = await ShortsTracker.shouldShowQuiz()
-      
       if (shouldShow && !showQuiz) {
         await loadAndShowQuiz()
       }
-      
-      // Shorts viewed count updated
     } catch (error) {
       console.error('Error handling short view:', error)
     }
@@ -95,42 +92,40 @@ export const ShortsDetector: React.FC = () => {
 
   // YouTube video control functions
   const pauseYouTubeVideo = () => {
-    // Try multiple selectors for YouTube Shorts video
-    const selectors = [
-      'video',
-      '.html5-video-player video',
-      '#shorts-player video',
-      '[data-layer="4"] video',
-      '.ytd-shorts video'
-    ]
+    // Get all video elements and find the one that's actually playing
+    const allVideos = document.querySelectorAll('video') as NodeListOf<HTMLVideoElement>
     
-    let video: HTMLVideoElement | null = null
-    for (const selector of selectors) {
-      video = document.querySelector(selector) as HTMLVideoElement
-      if (video) break
-    }
+    let playingVideo: HTMLVideoElement | null = null
+    let bestVideo: HTMLVideoElement | null = null
     
-    if (video) {
-      // Video state checked
-      if (!video.paused) {
+    // Find the best video element to pause
+    allVideos.forEach((video) => {
+      const isPlaying = !video.paused && video.currentTime > 0 && video.readyState > 2
+      const hasValidDuration = !isNaN(video.duration) && video.duration > 0
+      const hasCurrentTime = video.currentTime > 0
+      
+      // Prioritize actually playing videos
+      if (isPlaying) {
+        playingVideo = video
+      }
+      
+      // Fallback to video with valid duration and current time
+      if (!bestVideo && hasValidDuration && (hasCurrentTime || !video.paused)) {
+        bestVideo = video
+      }
+    })
+    
+    const targetVideo = playingVideo || bestVideo || allVideos[0]
+    
+    if (targetVideo) {
+      if (!targetVideo.paused && targetVideo.readyState > 0) {
         setWasVideoPaused(false)
-        video.pause()
-        // Video paused for quiz
+        targetVideo.pause()
       } else {
         setWasVideoPaused(true)
-        // Video was already paused
       }
     } else {
-      // No video element found
-      // Try again after a short delay
-      setTimeout(() => {
-        const retryVideo = document.querySelector('video') as HTMLVideoElement
-        if (retryVideo && !retryVideo.paused) {
-          setWasVideoPaused(false)
-          retryVideo.pause()
-          // Video paused for quiz (retry)
-        }
-      }, 500)
+      setWasVideoPaused(true) // Assume paused if no video found
     }
   }
 
@@ -139,7 +134,6 @@ export const ShortsDetector: React.FC = () => {
       'video',
       '.html5-video-player video',
       '#shorts-player video',
-      '[data-layer="4"] video',
       '.ytd-shorts video'
     ]
     
@@ -149,14 +143,8 @@ export const ShortsDetector: React.FC = () => {
       if (video) break
     }
     
-    if (video) {
-      // Resuming video
-      if (!wasVideoPaused) {
-        video.play().catch(() => {})
-        // Video resumed
-      }
-    } else {
-      // No video element found for resume
+    if (video && !wasVideoPaused) {
+      video.play().catch(() => {})
     }
   }
 
@@ -171,8 +159,11 @@ export const ShortsDetector: React.FC = () => {
         setCurrentQuestion(retryQuestion)
         setShowQuiz(true)
         setIsLoading(false)
-        pauseYouTubeVideo()
-        // Showing retry question
+        
+        // Add delay before pausing to ensure DOM is ready
+        setTimeout(() => {
+          pauseYouTubeVideo()
+        }, 100)
         return
       }
 
@@ -235,7 +226,11 @@ export const ShortsDetector: React.FC = () => {
       
       setCurrentQuestion(question)
       setShowQuiz(true)
-      pauseYouTubeVideo()
+      
+      // Add delay before pausing to ensure DOM is ready
+      setTimeout(() => {
+        pauseYouTubeVideo()
+      }, 100)
       
       // Quiz question generated successfully
       
@@ -271,7 +266,11 @@ export const ShortsDetector: React.FC = () => {
       
       setCurrentQuestion(fallbackQuestion)
       setShowQuiz(true)
-      pauseYouTubeVideo()
+      
+      // Add delay before pausing to ensure DOM is ready
+      setTimeout(() => {
+        pauseYouTubeVideo()
+      }, 100)
     } finally {
       setIsLoading(false)
     }
