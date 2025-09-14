@@ -42,7 +42,6 @@ const SettingsApp: React.FC = () => {
   
   // File management state
   const [selectedSubject, setSelectedSubject] = useState<string>('')
-  const [uploadingFiles, setUploadingFiles] = useState(false)
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null)
 
   // Quiz settings state
@@ -147,18 +146,25 @@ const SettingsApp: React.FC = () => {
     }
   }
 
-  const addSubjectHandler = async () => {
-    if (!user || !newSubjectName.trim()) return
+  const addSubjectWithFiles = async () => {
+    if (!user || !newSubjectName.trim() || !selectedFiles || selectedFiles.length === 0) return
     
     try {
       setAddingSubject(true)
+      
+      // First create the subject
       await addSubject(newSubjectName.trim())
       
+      // Then upload files to the subject
+      const fileArray = Array.from(selectedFiles)
+      await addFilesToSubject(fileArray)
+      
       setNewSubjectName('')
+      setSelectedFiles(null)
       await loadUserData()
     } catch (err) {
-      console.error('Error adding subject:', err)
-      setError('Failed to add subject. Please try again.')
+      console.error('Error creating subject with files:', err)
+      setError('Failed to create subject with materials. Please try again.')
     } finally {
       setAddingSubject(false)
     }
@@ -182,64 +188,6 @@ const SettingsApp: React.FC = () => {
     }
   }
 
-  const uploadFiles = async () => {
-    if (!user || !selectedFiles || !selectedSubject) return
-    
-    try {
-      setUploadingFiles(true)
-      
-      // Convert FileList to array and process each file
-      const filesArray = Array.from(selectedFiles)
-      const fileDataArray = await Promise.all(
-        filesArray.map(async (file) => {
-          return new Promise<{ name: string; data: string; size: number; type: string }>((resolve) => {
-            const reader = new FileReader()
-            reader.onload = () => {
-              resolve({
-                name: file.name,
-                data: reader.result as string,
-                size: file.size,
-                type: file.type
-              })
-            }
-            reader.readAsDataURL(file)
-          })
-        })
-      )
-      
-      // Upload files using the backend function
-      const result = await addFilesToSubject({
-        subjectName: selectedSubject,
-        files: fileDataArray
-      })
-      
-      const uploadResult = result.data as any
-      if (uploadResult?.success) {
-        console.log(`Uploaded ${uploadResult.filesAdded} files successfully`)
-        if (uploadResult.filesFailed > 0) {
-          setError(`${uploadResult.filesFailed} files failed to upload`)
-        }
-        
-        // Document processing is automatically triggered by the backend
-        // after successful file uploads via Pub/Sub
-        console.log('Document processing will be triggered automatically by the backend')
-      } else {
-        throw new Error('Upload failed')
-      }
-      
-      setSelectedFiles(null)
-      // Reset file input
-      const fileInput = document.getElementById('file-upload') as HTMLInputElement
-      if (fileInput) fileInput.value = ''
-      
-      await loadUserData()
-    } catch (err) {
-      console.error('Error uploading files:', err)
-      setError('Failed to upload files. Please try again.')
-    } finally {
-      setUploadingFiles(false)
-    }
-  }
 
   const removeFile = async (fileName: string, subjectName: string) => {
     if (!user || !confirm(`Are you sure you want to delete "${fileName}"? This cannot be undone.`)) return
@@ -447,13 +395,7 @@ const SettingsApp: React.FC = () => {
           className={`tab-button ${activeTab === 'subjects' ? 'active' : ''}`}
           onClick={() => setActiveTab('subjects')}
         >
-          Subjects
-        </button>
-        <button 
-          className={`tab-button ${activeTab === 'files' ? 'active' : ''}`}
-          onClick={() => setActiveTab('files')}
-        >
-          Files
+          Subjects & Materials
         </button>
         <button 
           className={`tab-button ${activeTab === 'quiz' ? 'active' : ''}`}
@@ -520,124 +462,77 @@ const SettingsApp: React.FC = () => {
         {activeTab === 'subjects' && (
           <div className="subjects-section">
             <div className="section-card">
-              <h3>Add New Subject</h3>
+              <h3>Add New Subject with Materials</h3>
+              <p className="section-description">
+                Create a new subject and upload study materials in one step. Materials are required to create a subject.
+              </p>
               <div className="add-subject-form">
-                <input
-                  type="text"
-                  value={newSubjectName}
-                  onChange={(e) => setNewSubjectName(e.target.value)}
-                  placeholder="Enter subject name"
-                  disabled={addingSubject}
-                />
-                <button 
-                  onClick={addSubjectHandler} 
-                  disabled={!newSubjectName.trim() || addingSubject}
-                  className="add-button"
-                >
-                  {addingSubject ? 'Adding...' : 'Add Subject'}
-                </button>
-              </div>
-            </div>
-
-            <div className="section-card">
-              <h3>Your Subjects</h3>
-              {userData.subjects.length === 0 ? (
-                <div className="empty-state">
-                  <p>No subjects found. Add your first subject above.</p>
-                </div>
-              ) : (
-                <div className="subjects-grid">
-                  {userData.subjects.map((subject) => (
-                    <div key={subject.name} className="subject-card">
-                      <div className="subject-info">
-                        <h4>{subject.name}</h4>
-                        <p>{subject.fileCount} files</p>
-                        <p className="subject-date">
-                          Created: {new Date(subject.createdAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <div className="subject-actions">
-                        <button 
-                          onClick={() => removeSubjectHandler(subject.name)}
-                          className="delete-button"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'files' && (
-          <div className="files-section">
-            <div className="section-card">
-              <h3>Upload Files</h3>
-              <div className="upload-form">
                 <div className="form-row">
-                  <label htmlFor="subject-select">Subject:</label>
-                  <select
-                    id="subject-select"
-                    value={selectedSubject}
-                    onChange={(e) => setSelectedSubject(e.target.value)}
-                    disabled={uploadingFiles}
-                  >
-                    <option value="">Select a subject</option>
-                    {userData.subjects.map((subject) => (
-                      <option key={subject.name} value={subject.name}>
-                        {subject.name}
-                      </option>
-                    ))}
-                  </select>
+                  <label htmlFor="subject-name">Subject Name:</label>
+                  <input
+                    id="subject-name"
+                    type="text"
+                    value={newSubjectName}
+                    onChange={(e) => setNewSubjectName(e.target.value)}
+                    placeholder="Enter subject name (e.g., Mathematics, Biology)"
+                    disabled={addingSubject}
+                  />
                 </div>
                 <div className="form-row">
-                  <label htmlFor="file-upload">Files:</label>
+                  <label htmlFor="subject-files">Study Materials:</label>
                   <div className="file-input-wrapper">
                     <input
-                      id="file-upload"
+                      id="subject-files"
                       type="file"
                       multiple
                       onChange={(e) => setSelectedFiles(e.target.files)}
-                      disabled={uploadingFiles}
+                      disabled={addingSubject}
                     />
                     <div 
-                      className={`file-input-button ${uploadingFiles ? 'disabled' : ''}`}
-                      onClick={() => !uploadingFiles && document.getElementById('file-upload')?.click()}
+                      className={`file-input-button ${addingSubject ? 'disabled' : ''}`}
+                      onClick={() => !addingSubject && document.getElementById('subject-files')?.click()}
                     >
                       <span className="file-input-icon">📁</span>
                       <span className={`file-input-text ${selectedFiles && selectedFiles.length > 0 ? 'has-files' : ''}`}>
                         {selectedFiles && selectedFiles.length > 0 
                           ? `${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''} selected`
-                          : 'Choose files to upload'
+                          : 'Choose study materials (required)'
                         }
                       </span>
                     </div>
                   </div>
                 </div>
-                <button
-                  onClick={uploadFiles}
-                  disabled={!selectedSubject || !selectedFiles || uploadingFiles}
-                  className="upload-button"
+                <button 
+                  onClick={addSubjectWithFiles} 
+                  disabled={!newSubjectName.trim() || !selectedFiles || selectedFiles.length === 0 || addingSubject}
+                  className="add-button"
                 >
-                  {uploadingFiles ? 'Uploading...' : 'Upload Files'}
+                  {addingSubject ? 'Creating Subject...' : 'Create Subject with Materials'}
                 </button>
               </div>
             </div>
 
             <div className="section-card">
-              <h3>Your Files</h3>
-              {totalFiles === 0 ? (
+              <h3>Your Subjects & Materials</h3>
+              {userData.subjects.length === 0 ? (
                 <div className="empty-state">
-                  <p>No files found. Upload files above to get started.</p>
+                  <p>No subjects found. Create your first subject with materials above.</p>
                 </div>
               ) : (
                 <div className="files-by-subject">
                   {userData.subjects.map((subject) => (
                     <div key={subject.name} className="subject-files">
-                      <h4>{subject.name} ({subject.fileCount} files)</h4>
+                      <div className="subject-header">
+                        <h4>{subject.name} ({subject.fileCount} files)</h4>
+                        <div className="subject-actions">
+                          <button 
+                            onClick={() => removeSubjectHandler(subject.name)}
+                            className="delete-button"
+                          >
+                            Delete Subject
+                          </button>
+                        </div>
+                      </div>
                       {subject.files.length === 0 ? (
                         <p className="no-files">No files in this subject</p>
                       ) : (
@@ -689,6 +584,7 @@ const SettingsApp: React.FC = () => {
             </div>
           </div>
         )}
+
 
         {activeTab === 'quiz' && (
           <div className="quiz-section">
