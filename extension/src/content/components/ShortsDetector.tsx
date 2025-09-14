@@ -206,44 +206,64 @@ export const ShortsDetector: React.FC = () => {
   // Show loading state when generating quiz
   if (isLoading) {
     return (
-      <div style={{
-        position: 'fixed',
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        zIndex: 999999,
-        backgroundColor: 'rgba(0, 0, 0, 0.9)',
-        color: 'white',
-        padding: '20px',
-        borderRadius: '12px',
-        textAlign: 'center',
-        fontFamily: 'system-ui, -apple-system, sans-serif',
-        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)'
-      }}>
+      <>
+        {/* Full-screen overlay to prevent scrolling */}
         <div style={{
-          width: '40px',
-          height: '40px',
-          border: '3px solid #333',
-          borderTop: '3px solid #4CAF50',
-          borderRadius: '50%',
-          animation: 'spin 1s linear infinite',
-          margin: '0 auto 16px'
-        }}></div>
-        <div style={{ fontSize: '16px', fontWeight: '500' }}>
-          Generating quiz question...
-        </div>
-        <div style={{ fontSize: '14px', opacity: 0.7, marginTop: '8px' }}>
-          Analyzing video content
-        </div>
-        <style dangerouslySetInnerHTML={{
-          __html: `
-            @keyframes spin {
-              0% { transform: rotate(0deg); }
-              100% { transform: rotate(360deg); }
-            }
-          `
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          zIndex: 999998,
+          cursor: 'wait'
         }} />
-      </div>
+        
+        {/* Loading content */}
+        <div style={{
+          position: 'fixed',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          zIndex: 999999,
+          backgroundColor: 'rgba(0, 0, 0, 0.95)',
+          color: 'white',
+          padding: '32px',
+          borderRadius: '16px',
+          textAlign: 'center',
+          fontFamily: 'system-ui, -apple-system, sans-serif',
+          boxShadow: '0 12px 48px rgba(0, 0, 0, 0.7)',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          backdropFilter: 'blur(10px)'
+        }}>
+          <div style={{
+            width: '48px',
+            height: '48px',
+            border: '4px solid #333',
+            borderTop: '4px solid #4CAF50',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto 20px'
+          }}></div>
+          <div style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px' }}>
+            Generating quiz question...
+          </div>
+          <div style={{ fontSize: '14px', opacity: 0.7 }}>
+            Analyzing video content
+          </div>
+          <div style={{ fontSize: '12px', opacity: 0.5, marginTop: '16px' }}>
+            Please wait, do not scroll
+          </div>
+          <style dangerouslySetInnerHTML={{
+            __html: `
+              @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+              }
+            `
+          }} />
+        </div>
+      </>
     )
   }
 
