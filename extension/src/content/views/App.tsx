@@ -4,9 +4,9 @@ import ExtractionDebugPanel from '../../components/ExtractionDebugPanel'
 import './App.css'
 
 function App() {
-  const handlePlatformDetected = (platform: string) => {
+  const handlePlatformDetected = (_platform: string) => {
     // You can add logic here to communicate with your coworker's onboarding features
-    console.log('Platform detected for potential integration:', platform)
+    // Platform detected for integration
   }
 
   return (

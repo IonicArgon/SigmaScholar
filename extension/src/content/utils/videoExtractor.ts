@@ -62,7 +62,7 @@ export class VideoExtractor {
   // Start transcript monitoring for a video (only when needed for quiz generation)
   static startTranscriptMonitoring(videoId: string, shouldMonitor: boolean = true): void {
     if (!shouldMonitor) {
-      console.log(`[VideoExtractor] ⏭️ Skipping transcript monitoring for video ${videoId.substring(0, 8)}... (not needed for quiz)`)
+      // Skipping transcript monitoring - not needed for quiz
       return
     }
 
@@ -84,7 +84,7 @@ export class VideoExtractor {
         characterData: true
       })
       
-      console.log(`[VideoExtractor] 🎤 Started transcript monitoring for video ${videoId.substring(0, 8)}...`)
+      // Started transcript monitoring
     }
 
     // Also check periodically in case mutation observer misses updates
@@ -95,7 +95,7 @@ export class VideoExtractor {
       if (!window.location.href.includes(videoId) || Date.now() - accumulator.lastUpdate > 5 * 60 * 1000) {
         clearInterval(intervalId)
         observer.disconnect()
-        console.log(`[VideoExtractor] ⏹️ Stopped transcript monitoring for video ${videoId.substring(0, 8)}...`)
+        // Stopped transcript monitoring
       }
     }, 2000) // Check every 2 seconds
 
@@ -135,7 +135,7 @@ export class VideoExtractor {
         
         if (newSegmentsAdded) {
           accumulator.lastUpdate = Date.now()
-          console.log(`[VideoExtractor] 📝 Added new caption segments. Total: ${accumulator.segments.size}`)
+          // Added new caption segments
         }
       }
       
@@ -144,7 +144,7 @@ export class VideoExtractor {
       if (videoElement) {
         if (videoElement.ended || videoElement.currentTime >= videoElement.duration - 1) {
           accumulator.isComplete = true
-          console.log(`[VideoExtractor] ✅ Transcript complete for video ${videoId.substring(0, 8)}... (${accumulator.segments.size} segments)`)
+          // Transcript complete
         }
       }
       
@@ -216,15 +216,12 @@ export class VideoExtractor {
       .replace(/(.)\1{2,}/g, '$1') // Remove repeated characters (3+ times)
       .replace(/(\w+\s+)\1{2,}/g, '$1') // Remove repeated words
     
-    console.log(`[VideoExtractor] 📜 Retrieved accumulated transcript: ${accumulator.segments.size} segments → ${cleanedSegments.length} cleaned → ${finalTranscript.length} chars, ${accumulator.isComplete ? 'complete' : 'in progress'}`)
+    // Removed excessive logging
     
     return finalTranscript
   }
   static extractYouTubeShorts(shouldMonitorTranscript: boolean = false): VideoData | null {
     try {
-      console.log('🎬 ═══════════════════════════════════════════════')
-      console.log('📍 NEW SHORT:', window.location.href.split('/shorts/')[1]?.substring(0, 10) + '...')
-      
       // Extract video ID early for transcript monitoring
       const videoId = this.extractVideoId(window.location.href, 'youtube')
       
@@ -355,22 +352,7 @@ export class VideoExtractor {
         extractionQuality = 'medium'
       }
       
-      // Clean, compact logging
-      console.log('📝 TITLE:', title ? `"${title}"` : '❌ None')
-      console.log('👤 AUTHOR:', author ? `"${author}"` : '❌ None')
-      
-      // Enhanced transcript logging
-      if (transcript) {
-        const isAccumulated = accumulatedTranscript && accumulatedTranscript.length > (immediateTranscript?.length || 0)
-        const transcriptType = isAccumulated ? 'ACCUMULATED' : 'IMMEDIATE'
-        console.log('🎤 TRANSCRIPT:', `"${transcript.substring(0, 100)}${transcript.length > 100 ? '...' : ''}" (${transcript.length} chars, ${transcriptType})`)
-      } else {
-        console.log('🎤 TRANSCRIPT:', '❌ None')
-      }
-      
-      console.log('⏱️  DURATION:', duration > 0 ? `${duration.toFixed(1)}s` : '❌ Unknown')
-      console.log('📊 QUALITY:', extractionQuality.toUpperCase())
-      console.log('═══════════════════════════════════════════════')
+      // Video extraction completed
       
       const videoData: VideoData = {
         platform: 'youtube-shorts',
@@ -576,7 +558,7 @@ export class VideoExtractor {
 
   static extractYouTubeAuthor(): string | null {
     try {
-      console.log('👤 Author extraction details:')
+      // Author extraction
       
       // Enhanced author selectors for YouTube Shorts specifically - Updated with actual HTML
       const authorSelectors = [
@@ -611,34 +593,20 @@ export class VideoExtractor {
         'div[class*="metadata"] a[href*="/channel/"]'
       ]
       
-      // First, let's see what channel links exist on the page
-      const allChannelLinks = document.querySelectorAll('a[href*="/channel/"], a[href*="/@"]')
-      console.log(`Found ${allChannelLinks.length} channel links on page`)
-      
-      for (let i = 0; i < Math.min(5, allChannelLinks.length); i++) {
-        const link = allChannelLinks[i] as HTMLElement
-        const href = link.getAttribute('href')
-        const text = link.textContent?.trim()
-        const classes = link.className
-        console.log(`Channel link ${i + 1}: "${text}" -> ${href} (classes: ${classes.substring(0, 50)}...)`)
-      }
-      
-      // Also check for the specific YT attributed string elements
-      const ytAttributedElements = document.querySelectorAll('span.ytReelChannelBarViewModelChannelName')
-      console.log(`Found ${ytAttributedElements.length} ytReelChannelBarViewModelChannelName elements`)
+      // Searching for channel information
       
       for (const selector of authorSelectors) {
         const element = document.querySelector(selector)
-        console.log(`  "${selector}":`, element ? '✅ Found' : '❌ Not found')
+        // Checking selector
         
         if (element?.textContent?.trim()) {
           const author = element.textContent.trim()
           // Skip if it's clearly not a channel name (too short, contains weird characters, etc.)
           if (author.length > 1 && !author.includes('http') && !author.match(/^\d+$/)) {
-            console.log(`✅ Author extracted: "${author}"`)
+            // Author found
             return author
           } else {
-            console.log(`⚠️ Skipped invalid author: "${author}"`)
+            // Invalid author skipped
           }
         }
       }
@@ -647,11 +615,11 @@ export class VideoExtractor {
       const urlMatch = window.location.pathname.match(/@([^/]+)/)
       if (urlMatch) {
         const authorFromUrl = urlMatch[1]
-        console.log(`✅ Author extracted from URL: "${authorFromUrl}"`)
+        // Author extracted from URL
         return authorFromUrl
       }
       
-      console.log('❌ No author found')
+      // No author found
       return null
     } catch (error) {
       console.error('Author extraction error:', error)
