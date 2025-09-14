@@ -45,6 +45,14 @@ export default function HomePage() {
     loadStudyModeSettings()
   }, [])
 
+  const showModal = (title: string, content: string, type: 'success' | 'error' | 'info' | 'warning' = 'info') => {
+    setModal({ isOpen: true, title, content, type })
+  }
+
+  const closeModal = () => {
+    setModal(prev => ({ ...prev, isOpen: false }))
+  }
+
   const handleSignOut = async () => {
     try {
       await signOut(auth)
@@ -55,7 +63,7 @@ export default function HomePage() {
 
   const startStudyMode = async () => {
     if (!selectedSubject) {
-      alert('Please select a subject first!')
+      showModal('No Subject Selected', 'Please select a subject first!', 'warning')
       return
     }
 
@@ -70,10 +78,14 @@ export default function HomePage() {
       setIsStudyModeActive(true)
       
       // Show confirmation
-      alert(`Study Mode activated for ${selectedSubject}! 🧠\n\nYou'll now get quiz questions while watching YouTube Shorts to help you learn.`)
+      showModal(
+        'Study Mode Activated! 🧠',
+        `Study Mode is now active for **${selectedSubject}**!\n\nYou'll get quiz questions while watching YouTube Shorts to help you learn.`,
+        'success'
+      )
     } catch (error) {
       console.error('Failed to start study mode:', error)
-      alert('Failed to start study mode. Please try again.')
+      showModal('Error Starting Study Mode', 'Failed to start study mode. Please try again.', 'error')
     }
   }
 
@@ -90,10 +102,14 @@ export default function HomePage() {
       setSelectedSubject(newSubject)
       
       // Show confirmation
-      alert(`Study subject changed to ${newSubject}! 📚\n\nYour study session continues with the new subject.`)
+      showModal(
+        'Subject Changed! 📚',
+        `Study subject changed to **${newSubject}**!\n\nYour study session continues with the new subject.`,
+        'success'
+      )
     } catch (error) {
       console.error('Failed to change subject:', error)
-      alert('Failed to change subject. Please try again.')
+      showModal('Error Changing Subject', 'Failed to change subject. Please try again.', 'error')
     }
   }
 
@@ -109,13 +125,17 @@ export default function HomePage() {
         const accuracy = finalStats.totalAnswers > 0 ? 
           Math.round((finalStats.correctAnswers / finalStats.totalAnswers) * 100) : 0
         
-        alert(`Study Mode deactivated! 📊\n\nSession Summary:\n• ${finalStats.quizCount} quizzes completed\n• ${finalStats.correctAnswers}/${finalStats.totalAnswers} correct answers (${accuracy}%)\n• ${finalStats.videosWatched} videos watched\n\nEnjoy your regular YouTube experience!`)
+        showModal(
+          'Study Mode Deactivated! 📊',
+          `**Session Summary:**\n\n• **${finalStats.quizCount}** quizzes completed\n• **${finalStats.correctAnswers}/${finalStats.totalAnswers}** correct answers (**${accuracy}%**)\n• **${finalStats.videosWatched}** videos watched\n\nEnjoy your regular YouTube experience!`,
+          'success'
+        )
       } else {
-        alert('Study Mode deactivated. Enjoy your regular YouTube experience!')
+        showModal('Study Mode Deactivated', 'Study Mode deactivated. Enjoy your regular YouTube experience!', 'success')
       }
     } catch (error) {
       console.error('Failed to stop study mode:', error)
-      alert('Failed to stop study mode. Please try again.')
+      showModal('Error Stopping Study Mode', 'Failed to stop study mode. Please try again.', 'error')
     }
   }
 
@@ -223,6 +243,17 @@ export default function HomePage() {
           </button>
         </div>
       </div>
+
+      <CustomModal
+        isOpen={modal.isOpen}
+        onClose={closeModal}
+        title={modal.title}
+        type={modal.type}
+      >
+        <div dangerouslySetInnerHTML={{ 
+          __html: modal.content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br/>') 
+        }} />
+      </CustomModal>
     </div>
   )
 }
