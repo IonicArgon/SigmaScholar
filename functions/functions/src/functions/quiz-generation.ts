@@ -7,6 +7,30 @@ import { firestore } from '../lib/firebase'
 const cohereApiKey = defineSecret('COHERE_API_KEY')
 
 /**
+ * Cleans JSON response to fix common formatting issues
+ */
+function cleanJsonResponse(jsonText: string): string {
+  return jsonText
+    // Remove any markdown code block markers
+    .replace(/```(?:json)?\s*/, '')
+    .replace(/\s*```$/, '')
+    // Fix escaped characters that break JSON parsing
+    .replace(/\\(?!["\\/bfnrt])/g, '\\\\')
+    // Fix common LaTeX escape issues in JSON strings
+    .replace(/\\\\([a-zA-Z]+)/g, '\\\\\\\\$1')
+    // Fix unescaped quotes in strings (but not the JSON structure quotes)
+    .replace(/"([^"]*)"([^"]*)"([^"]*)"/g, (match, p1, p2, p3) => {
+      // Only fix quotes that are clearly inside string values
+      if (p2.includes(':') || p2.includes(',') || p2.includes('{') || p2.includes('}')) {
+        return match // Don't modify structural JSON
+      }
+      return `"${p1}\\"${p2}\\"${p3}"`
+    })
+    // Clean up extra whitespace
+    .trim()
+}
+
+/**
  * Preprocesses LaTeX content to ensure proper formatting and escaping
  */
 function preprocessLatex(text: string): string {
@@ -254,14 +278,33 @@ YOUTUBE VIDEO CONTEXT (JSON):
     
     console.log(`[generateQuizQuestion] Raw response: ${responseText}`)
     
-    // Clean up any potential JSON formatting issues with KaTeX
-    // Replace problematic escape sequences that might break JSON parsing
-    responseText = responseText.replace(/\\(?!["\\/bfnrt])/g, '\\\\')
+    // Clean up JSON formatting issues more comprehensively
+    responseText = cleanJsonResponse(responseText)
     
     console.log(`[generateQuizQuestion] Cleaned response: ${responseText}`)
     
-    // Parse JSON response
-    const quizQuestion = JSON.parse(responseText)
+    // Parse JSON response with better error handling
+    let quizQuestion
+    try {
+      quizQuestion = JSON.parse(responseText)
+    } catch (parseError) {
+      const errorMessage = parseError instanceof Error ? parseError.message : String(parseError)
+      console.error(`[generateQuizQuestion] JSON parse error:`, parseError)
+      console.error(`[generateQuizQuestion] Problematic JSON:`, responseText)
+      
+      // Try to extract JSON from markdown code blocks if present
+      const jsonMatch = responseText.match(/```(?:json)?\s*(\{[\s\S]*\})\s*```/)
+      if (jsonMatch) {
+        console.log(`[generateQuizQuestion] Found JSON in code block, retrying...`)
+        try {
+          quizQuestion = JSON.parse(cleanJsonResponse(jsonMatch[1]))
+        } catch (secondParseError) {
+          throw new Error(`Failed to parse JSON response: ${errorMessage}`)
+        }
+      } else {
+        throw new Error(`Failed to parse JSON response: ${errorMessage}`)
+      }
+    }
     
     // Apply LaTeX preprocessing to all text fields
     if (quizQuestion.question) {

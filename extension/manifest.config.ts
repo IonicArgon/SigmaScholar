@@ -3,6 +3,7 @@ export default defineManifest({
   manifest_version: 3,
   name: 'Sigma Scholar',
   version: '1.0.0',
+  description: 'Brainrot reverser',
   icons: {
     16: 'public/SigmaScholar_Logo.png',
     32: 'public/SigmaScholar_Logo.png',
