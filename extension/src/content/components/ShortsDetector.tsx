@@ -23,8 +23,40 @@ export const ShortsDetector: React.FC = () => {
   const [incorrectQuestions, setIncorrectQuestions] = useState<QuizQuestion[]>([])
   const [questionsUntilRetry, setQuestionsUntilRetry] = useState(0)
   const [wasVideoPaused, setWasVideoPaused] = useState(false)
+  const [isBlocked, setIsBlocked] = useState(false)
+  const [blockReason, setBlockReason] = useState('')
 
   useEffect(() => {
+    // Register this tab with background script
+    chrome.runtime.sendMessage({
+      type: 'REGISTER_YOUTUBE_TAB'
+    })
+
+    // Check initial quiz state
+    checkQuizState()
+
+    // Listen for messages from background script
+    const messageListener = (message: any) => {
+      if (message.type === 'BLOCK_CONTENT') {
+        setIsBlocked(true)
+        setBlockReason(message.reason || 'Quiz active on another tab')
+        pauseYouTubeVideo()
+      } else if (message.type === 'UNBLOCK_CONTENT') {
+        setIsBlocked(false)
+        setBlockReason('')
+        resumeYouTubeVideo()
+      }
+    }
+
+    chrome.runtime.onMessage.addListener(messageListener)
+
+    // Set up periodic quiz state checking to catch session ends
+    const stateCheckInterval = setInterval(() => {
+      if (isBlocked) {
+        checkQuizState()
+      }
+    }, 2000) // Check every 2 seconds when blocked
+
     // Detect when user scrolls to a new short
     const detectShortScroll = () => {
       // YouTube Shorts specific detection
@@ -65,11 +97,49 @@ export const ShortsDetector: React.FC = () => {
     return () => {
       observer.disconnect()
       window.removeEventListener('scroll', handleScroll)
+      chrome.runtime.onMessage.removeListener(messageListener)
+      clearInterval(stateCheckInterval)
+      
+      // Unregister this tab
+      chrome.runtime.sendMessage({
+        type: 'UNREGISTER_YOUTUBE_TAB'
+      })
     }
   }, [])
 
+  const checkQuizState = async () => {
+    try {
+      const response = await new Promise<any>((resolve) => {
+        chrome.runtime.sendMessage({
+          type: 'CHECK_QUIZ_STATE'
+        }, resolve)
+      })
+
+      if (response.success && response.quizState) {
+        const { isBlocked: blocked, isActiveQuizTab } = response.quizState
+        
+        if (blocked && !isActiveQuizTab) {
+          setIsBlocked(true)
+          setBlockReason(`Quiz active on another tab (${response.quizState.subject})`)
+          pauseYouTubeVideo()
+        } else {
+          setIsBlocked(false)
+          setBlockReason('')
+        }
+      }
+    } catch (error) {
+      console.error('Error checking quiz state:', error)
+    }
+  }
+
   const handleShortViewed = async () => {
     try {
+      // Check if content is blocked first
+      await checkQuizState()
+      if (isBlocked) {
+        return // Don't process if blocked
+      }
+
       // Increment shorts count
       await ShortsTracker.incrementShortsCount()
       
@@ -151,6 +221,9 @@ export const ShortsDetector: React.FC = () => {
   const loadAndShowQuiz = async () => {
     setIsLoading(true)
     
+    // Get the selected subject for quiz generation (move outside try block for scope)
+    let selectedSubject: string | null = null
+    
     try {
       // Check if we should show a retry question first
       if (questionsUntilRetry === 0 && incorrectQuestions.length > 0) {
@@ -167,8 +240,7 @@ export const ShortsDetector: React.FC = () => {
         return
       }
 
-      // Get the selected subject for quiz generation
-      const selectedSubject = await ShortsTracker.getSelectedSubject()
+      selectedSubject = await ShortsTracker.getSelectedSubject()
       
       if (!selectedSubject) {
         console.error('No subject selected for quiz generation')
@@ -227,6 +299,12 @@ export const ShortsDetector: React.FC = () => {
       setCurrentQuestion(question)
       setShowQuiz(true)
       
+      // Notify background script that quiz is now displayed
+      chrome.runtime.sendMessage({
+        type: 'QUIZ_DISPLAYED',
+        data: { subject: selectedSubject }
+      })
+      
       // Add delay before pausing to ensure DOM is ready
       setTimeout(() => {
         pauseYouTubeVideo()
@@ -267,6 +345,12 @@ export const ShortsDetector: React.FC = () => {
       setCurrentQuestion(fallbackQuestion)
       setShowQuiz(true)
       
+      // Notify background script that quiz is now displayed (fallback case)
+      chrome.runtime.sendMessage({
+        type: 'QUIZ_DISPLAYED',
+        data: { subject: selectedSubject || 'General' }
+      })
+      
       // Add delay before pausing to ensure DOM is ready
       setTimeout(() => {
         pauseYouTubeVideo()
@@ -278,6 +362,18 @@ export const ShortsDetector: React.FC = () => {
 
   const handleQuizComplete = async (correct: boolean) => {
     console.log(`Quiz completed. Correct: ${correct}`)
+    
+    // Notify background script that quiz was answered
+    try {
+      await new Promise<any>((resolve) => {
+        chrome.runtime.sendMessage({
+          type: 'QUIZ_ANSWERED',
+          data: { isCorrect: correct }
+        }, resolve)
+      })
+    } catch (error) {
+      console.error('Failed to notify background script:', error)
+    }
     
     // Record quiz attempt in study session
     try {
@@ -340,6 +436,58 @@ export const ShortsDetector: React.FC = () => {
       document.removeEventListener('touchmove', preventTouch, { capture: true })
     }
   }, [isLoading])
+
+  // Show blocked state when content is blocked due to quiz on another tab
+  if (isBlocked) {
+    return (
+      <>
+        {/* Full-screen overlay to block content */}
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          backgroundColor: 'rgba(0, 0, 0, 0.95)',
+          zIndex: 999998,
+          cursor: 'not-allowed'
+        }} />
+        
+        {/* Blocked content message */}
+        <div style={{
+          position: 'fixed',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          zIndex: 999999,
+          backgroundColor: 'rgba(220, 38, 38, 0.95)',
+          color: 'white',
+          padding: '32px',
+          borderRadius: '16px',
+          textAlign: 'center',
+          fontFamily: 'system-ui, -apple-system, sans-serif',
+          boxShadow: '0 12px 48px rgba(0, 0, 0, 0.7)',
+          border: '1px solid rgba(255, 255, 255, 0.2)',
+          backdropFilter: 'blur(10px)',
+          maxWidth: '400px'
+        }}>
+          <div style={{
+            fontSize: '48px',
+            marginBottom: '16px'
+          }}>🚫</div>
+          <div style={{ fontSize: '20px', fontWeight: '600', marginBottom: '12px' }}>
+            Content Blocked
+          </div>
+          <div style={{ fontSize: '16px', marginBottom: '20px', lineHeight: '1.5' }}>
+            {blockReason}
+          </div>
+          <div style={{ fontSize: '14px', opacity: 0.8, lineHeight: '1.4' }}>
+            Complete the quiz on the other tab to continue browsing, or close that tab to end the study session.
+          </div>
+        </div>
+      </>
+    )
+  }
 
   // Show loading state when generating quiz
   if (isLoading) {

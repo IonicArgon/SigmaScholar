@@ -32,6 +32,15 @@ async function initializeApp() {
   )
 }
 
+// Handle page unload to clean up tab registration
+window.addEventListener('beforeunload', () => {
+  chrome.runtime.sendMessage({
+    type: 'UNREGISTER_YOUTUBE_TAB'
+  }).catch(() => {
+    // Ignore errors if background script is not available
+  })
+})
+
 // Initialize when DOM is ready
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initializeApp)
