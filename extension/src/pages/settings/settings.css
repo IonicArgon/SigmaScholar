@@ -90,6 +90,100 @@
   --transition-fast: 150ms ease-in-out;
   --transition-normal: 250ms ease-in-out;
   --transition-slow: 350ms ease-in-out;
+  --transition-elastic: 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --transition-bounce: 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* Modern Keyframe Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Removed pulse animation - replaced with subtle glow effect */
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes gradientShift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes floatUp {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.3) translateY(30px);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05) translateY(-5px);
+  }
+  70% {
+    transform: scale(0.9) translateY(0px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0px);
+  }
 }
 
 body {
@@ -112,11 +206,13 @@ body {
   border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   backdrop-filter: blur(10px);
+  animation: fadeInUp 0.8s ease-out;
 }
 
 .settings-header {
   text-align: center;
   margin-bottom: var(--space-10);
+  animation: slideInLeft 0.6s ease-out 0.2s both;
 }
 
 .settings-title {
@@ -125,9 +221,11 @@ body {
   color: #1a1a1a;
   margin-bottom: var(--space-2);
   background: var(--gradient-primary);
+  background-size: 200% 200%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  animation: gradientShift 3s ease-in-out infinite;
 }
 
 .settings-subtitle {
@@ -141,6 +239,7 @@ body {
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: var(--space-6);
   margin-bottom: var(--space-10);
+  animation: slideInRight 0.6s ease-out 0.4s both;
 }
 
 .stat-card {
@@ -151,14 +250,16 @@ body {
   box-shadow: var(--shadow-lg);
   text-align: center;
   border: 1px solid hsl(var(--border));
-  transition: var(--transition-normal);
+  transition: var(--transition-elastic);
   position: relative;
   overflow: hidden;
+  animation: bounceIn 0.6s ease-out both;
 }
 
 .stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-xl);
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: var(--shadow-xl), 0 0 30px rgba(59, 130, 246, 0.2);
+  animation: floatUp 2s ease-in-out infinite;
 }
 
 .stat-card h3 {
@@ -188,6 +289,7 @@ body {
   overflow: hidden;
   border: 1px solid hsl(var(--border));
   position: relative;
+  animation: scaleIn 0.5s ease-out 0.6s both;
 }
 
 .tab-button {
@@ -198,20 +300,23 @@ body {
   font-size: var(--font-size-sm);
   font-weight: 500;
   cursor: pointer;
-  transition: var(--transition-normal);
+  transition: var(--transition-bounce);
   color: hsl(var(--muted-foreground));
   position: relative;
+  overflow: hidden;
 }
 
 .tab-button:hover {
   background: hsl(var(--primary) / 0.1);
   color: hsl(var(--foreground));
+  transform: translateY(-2px);
 }
 
 .tab-button.active {
   background: var(--gradient-primary);
   color: white;
   box-shadow: var(--shadow-md);
+  transform: scale(1.05);
 }
 
 .tab-button:not(:last-child) {
@@ -230,14 +335,15 @@ body {
   padding: var(--space-5);
   margin-bottom: var(--space-5);
   border: 1px solid hsl(var(--border));
-  transition: var(--transition-normal);
+  transition: var(--transition-elastic);
   position: relative;
   overflow: hidden;
+  animation: fadeInUp 0.6s ease-out both;
 }
 
 .section-card:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-lg);
+  transform: translateY(-5px) scale(1.01);
+  box-shadow: var(--shadow-lg), 0 0 25px rgba(59, 130, 246, 0.15);
 }
 
 .section-card h3 {
@@ -286,14 +392,15 @@ body {
   background: hsl(var(--surface) / 0.5);
   border-radius: var(--radius-md);
   border: 1px solid hsl(var(--border));
-  transition: var(--transition-normal);
+  transition: var(--transition-bounce);
+  animation: slideInLeft 0.5s ease-out both;
 }
 
 .profile-field:hover {
   background: hsl(var(--surface) / 0.7);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
-  border-color: hsl(var(--primary) / 0.3);
+  transform: translateY(-3px) scale(1.01);
+  box-shadow: var(--shadow-md), 0 0 20px rgba(59, 130, 246, 0.1);
+  border-color: hsl(var(--primary) / 0.5);
 }
 
 .profile-field:last-child {
@@ -434,7 +541,8 @@ body {
   background: hsl(var(--surface) / 0.5);
   border-radius: var(--radius-md);
   border: 1px solid hsl(var(--border));
-  transition: var(--transition-normal);
+  transition: var(--transition-elastic);
+  animation: slideInRight 0.6s ease-out both;
 }
 
 .add-subject-form .form-row label {
@@ -447,9 +555,9 @@ body {
 
 .add-subject-form:hover {
   background: hsl(var(--surface) / 0.7);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
-  border-color: hsl(var(--primary) / 0.3);
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: var(--shadow-lg), 0 0 25px rgba(59, 130, 246, 0.15);
+  border-color: hsl(var(--primary) / 0.5);
 }
 
 .add-subject-form input {
@@ -482,22 +590,26 @@ body {
   align-self: flex-start;
   padding: var(--space-3) var(--space-6);
   background: var(--gradient-primary);
+  background-size: 200% 200%;
   color: white;
   border: none;
   border-radius: var(--radius-md);
   font-size: var(--font-size-sm);
   font-weight: 600;
   cursor: pointer;
-  transition: var(--transition-fast);
+  transition: var(--transition-bounce);
   box-shadow: var(--shadow-sm);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   white-space: nowrap;
+  position: relative;
+  overflow: hidden;
 }
 
 .add-button:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: var(--shadow-lg), 0 0 25px rgba(59, 130, 246, 0.4);
+  animation: gradientShift 1.5s ease-in-out infinite;
 }
 
 .add-button:disabled {
@@ -519,15 +631,17 @@ body {
   border: 1px solid hsl(var(--border));
   border-radius: var(--radius-lg);
   padding: var(--space-5);
-  transition: var(--transition-normal);
+  transition: var(--transition-elastic);
   box-shadow: var(--shadow-md);
   position: relative;
   overflow: hidden;
+  animation: scaleIn 0.5s ease-out both;
 }
 
 .subject-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
+  transform: translateY(-6px) scale(1.02);
+  box-shadow: var(--shadow-xl), 0 0 30px rgba(59, 130, 246, 0.2);
+  animation: floatUp 2s ease-in-out infinite;
 }
 
 .subject-info h4 {
@@ -589,14 +703,15 @@ body {
   background: hsl(var(--surface) / 0.5);
   border-radius: var(--radius-lg);
   border: 1px solid hsl(var(--border));
-  transition: var(--transition-normal);
+  transition: var(--transition-elastic);
+  animation: slideInLeft 0.5s ease-out both;
 }
 
 .upload-form .form-row:hover {
   background: hsl(var(--surface) / 0.7);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
-  border-color: hsl(var(--primary) / 0.3);
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: var(--shadow-lg), 0 0 25px rgba(59, 130, 246, 0.15);
+  border-color: hsl(var(--primary) / 0.5);
 }
 
 .upload-form .form-row label {
@@ -611,7 +726,7 @@ body {
   border: 2px solid hsl(var(--border));
   border-radius: var(--radius-md);
   font-size: var(--font-size-sm);
-  transition: var(--transition-fast);
+  transition: var(--transition-bounce);
   background: hsl(var(--surface) / 0.9);
   color: hsl(var(--foreground));
   cursor: pointer;
@@ -620,13 +735,14 @@ body {
 .upload-form .form-row select:focus {
   outline: none;
   border-color: hsl(var(--primary));
-  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.1);
+  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.2), 0 0 20px rgba(59, 130, 246, 0.3);
+  transform: translateY(-2px) scale(1.02);
 }
 
 .upload-form .form-row select:hover {
   border-color: hsl(var(--primary) / 0.7);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: var(--shadow-md), 0 0 15px rgba(59, 130, 246, 0.2);
 }
 
 .upload-form .form-row select:disabled {
@@ -660,22 +776,23 @@ body {
   background: hsl(var(--surface) / 0.9);
   color: hsl(var(--foreground));
   cursor: pointer;
-  transition: var(--transition-fast);
+  transition: var(--transition-bounce);
   width: 100%;
   box-sizing: border-box;
 }
 
 .file-input-button:hover {
   border-color: hsl(var(--primary) / 0.7);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: var(--shadow-md), 0 0 20px rgba(59, 130, 246, 0.2);
   background: hsl(var(--surface));
 }
 
 .file-input-button:focus-within {
   outline: none;
   border-color: hsl(var(--primary));
-  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.1);
+  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.2), 0 0 25px rgba(59, 130, 246, 0.3);
+  transform: translateY(-2px) scale(1.02);
 }
 
 .file-input-button.disabled {
@@ -707,23 +824,26 @@ body {
 .upload-button {
   align-self: flex-start;
   padding: var(--space-3) var(--space-6);
-  background: var(--success-500);
+  background: linear-gradient(135deg, var(--success-500), var(--success-600));
+  background-size: 200% 200%;
   color: white;
   border: none;
   border-radius: var(--radius-md);
   font-size: var(--font-size-sm);
   font-weight: 600;
   cursor: pointer;
-  transition: var(--transition-fast);
+  transition: var(--transition-bounce);
   box-shadow: var(--shadow-sm);
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  position: relative;
+  overflow: hidden;
 }
 
 .upload-button:hover:not(:disabled) {
-  background: var(--success-600);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
+  transform: translateY(-4px) scale(1.05);
+  box-shadow: var(--shadow-lg), 0 0 30px rgba(34, 197, 94, 0.4);
+  animation: gradientShift 1.5s ease-in-out infinite, shimmer 2s ease-in-out infinite;
 }
 
 .upload-button:disabled {
@@ -744,14 +864,15 @@ body {
   border-radius: var(--radius-md);
   padding: var(--space-4);
   border: 1px solid hsl(var(--border));
-  transition: var(--transition-normal);
+  transition: var(--transition-elastic);
+  animation: slideInRight 0.5s ease-out both;
 }
 
 .subject-files:hover {
   background: hsl(var(--surface) / 0.7);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
-  border-color: hsl(var(--primary) / 0.3);
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: var(--shadow-lg), 0 0 25px rgba(59, 130, 246, 0.15);
+  border-color: hsl(var(--primary) / 0.5);
 }
 
 .subject-header {
@@ -795,13 +916,15 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: var(--radius-lg);
   padding: var(--space-5);
-  transition: var(--transition-normal);
+  transition: var(--transition-elastic);
   box-shadow: var(--shadow-md);
+  animation: scaleIn 0.5s ease-out both;
 }
 
 .file-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
+  transform: translateY(-6px) scale(1.02);
+  box-shadow: var(--shadow-xl), 0 0 30px rgba(59, 130, 246, 0.2);
+  animation: floatUp 2s ease-in-out infinite;
 }
 
 .file-icon {
@@ -851,23 +974,84 @@ body {
 }
 
 .open-button {
-  background: var(--primary-500);
+  background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
+  background-size: 200% 200%;
   color: white;
+  position: relative;
+  overflow: hidden;
 }
 
 .open-button:hover {
-  background: var(--primary-600);
-  transform: translateY(-1px);
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: var(--shadow-md), 0 0 20px rgba(59, 130, 246, 0.4);
+  animation: gradientShift 1.5s ease-in-out infinite;
 }
 
 .delete-button {
-  background: var(--error-500);
+  background: linear-gradient(135deg, var(--error-500), var(--error-600));
+  background-size: 200% 200%;
   color: white;
+  position: relative;
+  overflow: hidden;
 }
 
 .delete-button:hover {
-  background: var(--error-600);
-  transform: translateY(-1px);
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: var(--shadow-md), 0 0 20px rgba(239, 68, 68, 0.4);
+  animation: gradientShift 1.5s ease-in-out infinite;
+}
+
+/* Checkbox Label Styling */
+.checkbox-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  cursor: pointer;
+  margin-bottom: var(--space-3);
+}
+
+.checkbox-text {
+  font-weight: 600;
+  color: hsl(var(--foreground));
+  font-size: var(--font-size-base);
+  flex: 1;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  cursor: pointer;
+  accent-color: hsl(var(--primary));
+  transform: scale(1.2) translate(8px, 6px);
+  transition: var(--transition-bounce);
+}
+
+.checkbox-label input[type="checkbox"]:focus {
+  outline: 2px solid hsl(var(--primary) / 0.5);
+  outline-offset: 2px;
+}
+
+.checkbox-label input[type="checkbox"]:active {
+  transform: scale(1.1) translate(8px, 6px);
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
+}
+
+.checkbox-label input[type="checkbox"]:checked {
+  animation: checkboxBounce 0.3s ease-out;
+}
+
+@keyframes checkboxBounce {
+  0% {
+    transform: scale(1.2) translate(8px, 6px);
+  }
+  50% {
+    transform: scale(1.4) translate(8px, 6px);
+  }
+  100% {
+    transform: scale(1.2) translate(8px, 6px);
+  }
 }
 
 /* Loading and Error States */
