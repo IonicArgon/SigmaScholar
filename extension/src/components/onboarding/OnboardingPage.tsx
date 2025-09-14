@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
+import { Subject, FileMetadata } from '@/lib/firestore'
 import './OnboardingPage.css'
 
 export default function OnboardingPage() {
@@ -48,9 +49,19 @@ export default function OnboardingPage() {
   }
 
   const handleComplete = () => {
+    // Convert string subjects to proper Subject format
+    const subjectsWithFiles: (Subject & { files: FileMetadata[] })[] = subjects.map(subjectName => ({
+      userId: '', // Will be set by the backend
+      name: subjectName,
+      createdAt: new Date(),
+      fileCount: 0,
+      sessionCount: 0,
+      files: [] // Empty files array for now
+    }))
+
     // Save subjects and mark as onboarded
     updateProfile({
-      subjects,
+      subjects: subjectsWithFiles,
       isOnboarded: true
     })
     
