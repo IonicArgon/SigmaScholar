@@ -19,12 +19,17 @@ const OnboardingApp: React.FC = () => {
   const [newSubject, setNewSubject] = useState('')
 
   useEffect(() => {
-    // Load existing subjects from localStorage
-    const savedSubjects = localStorage.getItem('sigma_subjects')
-    if (savedSubjects) {
-      setSubjects(JSON.parse(savedSubjects))
-    }
-  }, [])
+    // Clear any existing onboarding state when component mounts
+    // This ensures fresh state for each new user
+    setSubjects([])
+    setNewSubject('')
+    setCurrentStep(1)
+    
+    // Clear localStorage onboarding data to prevent state leakage between users
+    localStorage.removeItem('sigma_subjects')
+    localStorage.removeItem('sigma_files')
+    localStorage.removeItem('sigma_onboarded')
+  }, [user?.uid])
 
   const addSubject = () => {
     if (newSubject.trim()) {

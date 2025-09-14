@@ -292,4 +292,16 @@ export class StudySessionManager {
       throw error
     }
   }
+
+  /**
+   * Clear all study session data (for sign-out)
+   */
+  static async clearAllData(): Promise<void> {
+    try {
+      await this.clearSessionData()
+      console.log('StudySessionManager: All data cleared')
+    } catch (error) {
+      console.error('Failed to clear StudySessionManager data:', error)
+    }
+  }
 }

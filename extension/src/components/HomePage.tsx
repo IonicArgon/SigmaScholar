@@ -60,6 +60,22 @@ export default function HomePage() {
 
   const handleSignOut = async () => {
     try {
+      // End any active study session first
+      if (await StudySessionManager.hasActiveSession()) {
+        try {
+          await StudySessionManager.endSession()
+        } catch (error) {
+          console.warn('Failed to end active session during sign out:', error)
+        }
+      }
+
+      // Clear all study mode state
+      await Promise.all([
+        ShortsTracker.clearAllData(),
+        StudySessionManager.clearAllData()
+      ])
+
+      // Sign out from Firebase
       await signOut(auth)
     } catch (error) {
       console.error('Sign out failed:', error)
@@ -171,7 +187,16 @@ export default function HomePage() {
 
   // Set up real-time listeners for subject session counts
   useEffect(() => {
-    if (!user?.uid) return
+    if (!user?.uid) {
+      // Clear state when no user
+      setSubjectSessionCounts({})
+      return
+    }
+
+    // Clear state for new user
+    setSubjectSessionCounts({})
+    
+    let unsubscribers: (() => void)[] = []
 
     const setupSubjectListeners = async () => {
       try {
@@ -182,7 +207,6 @@ export default function HomePage() {
         )
         
         const snapshot = await getDocs(subjectsQuery)
-        const unsubscribers: (() => void)[] = []
 
         // Set up real-time listeners for each subject
         snapshot.docs.forEach((subjectDoc) => {
@@ -210,21 +234,16 @@ export default function HomePage() {
 
           unsubscribers.push(unsubscribe)
         })
-
-        // Store unsubscribers for cleanup
-        return () => {
-          unsubscribers.forEach(unsubscribe => unsubscribe())
-        }
       } catch (error) {
         console.error('Error setting up subject listeners:', error)
       }
     }
 
-    const cleanupPromise = setupSubjectListeners()
+    setupSubjectListeners()
     
     // Cleanup function
     return () => {
-      cleanupPromise.then(cleanup => cleanup?.())
+      unsubscribers.forEach(unsubscribe => unsubscribe())
     }
   }, [user?.uid])
 

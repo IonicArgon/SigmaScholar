@@ -40,12 +40,18 @@ export const useFileProcessingStatus = () => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // Clear state immediately when user changes or is null
     if (!user) {
       setFiles([])
       setStats({ total: 0, processing: 0, completed: 0, failed: 0, pending: 0 })
       setLoading(false)
       return
     }
+
+    // Reset state for new user
+    setFiles([])
+    setStats({ total: 0, processing: 0, completed: 0, failed: 0, pending: 0 })
+    setLoading(true)
 
     let unsubscribe: Unsubscribe
 
@@ -111,7 +117,7 @@ export const useFileProcessingStatus = () => {
         unsubscribe()
       }
     }
-  }, [user])
+  }, [user?.uid])
 
   const getFilesBySubject = (subjectName: string) => {
     return files.filter(file => file.subjectName === subjectName)

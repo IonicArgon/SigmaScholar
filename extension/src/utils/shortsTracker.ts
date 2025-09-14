@@ -108,4 +108,14 @@ export class ShortsTracker {
     
     return { count, settings, shouldShow }
   }
+
+  // Clear all shorts tracker data (for sign-out)
+  static async clearAllData(): Promise<void> {
+    try {
+      await chrome.storage.local.remove([this.STORAGE_KEY, this.SETTINGS_KEY])
+      console.log('ShortsTracker: All data cleared')
+    } catch (error) {
+      console.error('Failed to clear ShortsTracker data:', error)
+    }
+  }
 }
