@@ -19,12 +19,40 @@ export interface StudySession {
 }
 
 export class StudySessionManager {
-  private static currentSessionId: string | null = null
-  private static currentStats: StudySessionStats = {
-    quizCount: 0,
-    correctAnswers: 0,
-    totalAnswers: 0,
-    videosWatched: 0
+  private static readonly STORAGE_KEYS = {
+    SESSION_ID: 'currentSessionId',
+    SESSION_STATS: 'currentSessionStats'
+  }
+
+  private static async getCurrentSessionId(): Promise<string | null> {
+    const result = await chrome.storage.local.get(this.STORAGE_KEYS.SESSION_ID)
+    return result[this.STORAGE_KEYS.SESSION_ID] || null
+  }
+
+  private static async setCurrentSessionId(sessionId: string | null): Promise<void> {
+    if (sessionId) {
+      await chrome.storage.local.set({ [this.STORAGE_KEYS.SESSION_ID]: sessionId })
+    } else {
+      await chrome.storage.local.remove(this.STORAGE_KEYS.SESSION_ID)
+    }
+  }
+
+  private static async getCurrentStats(): Promise<StudySessionStats> {
+    const result = await chrome.storage.local.get(this.STORAGE_KEYS.SESSION_STATS)
+    return result[this.STORAGE_KEYS.SESSION_STATS] || {
+      quizCount: 0,
+      correctAnswers: 0,
+      totalAnswers: 0,
+      videosWatched: 0
+    }
+  }
+
+  private static async setCurrentStats(stats: StudySessionStats): Promise<void> {
+    await chrome.storage.local.set({ [this.STORAGE_KEYS.SESSION_STATS]: stats })
+  }
+
+  private static async clearSessionData(): Promise<void> {
+    await chrome.storage.local.remove([this.STORAGE_KEYS.SESSION_ID, this.STORAGE_KEYS.SESSION_STATS])
   }
 
   /**
@@ -37,14 +65,29 @@ export class StudySessionManager {
       const data = result.data as any
 
       if (data.success) {
-        this.currentSessionId = data.sessionId
-        this.currentStats = {
+        await this.setCurrentSessionId(data.sessionId)
+        await this.setCurrentStats({
           quizCount: 0,
           correctAnswers: 0,
           totalAnswers: 0,
           videosWatched: 0
+        })
+
+        // Send message to background script to start session
+        try {
+          if (typeof chrome !== 'undefined' && chrome.runtime) {
+            const sessionId = await this.getCurrentSessionId()
+            const stats = await this.getCurrentStats()
+            chrome.runtime.sendMessage({
+              type: 'SESSION_STARTED',
+              sessionId: sessionId,
+              stats: stats
+            })
+          }
+        } catch (error) {
+          console.warn('Failed to notify background script of session start:', error)
         }
-        
+
         console.log(`Study session started: ${data.sessionId} for subject: ${subject}`)
         return data.sessionId
       } else {
@@ -56,40 +99,59 @@ export class StudySessionManager {
     }
   }
 
+
   /**
    * End the current study session
    */
   static async endSession(): Promise<StudySessionStats | null> {
-    if (!this.currentSessionId) {
-      console.warn('No active study session to end')
+    const currentSessionId = await this.getCurrentSessionId()
+    if (!currentSessionId) {
+      console.warn('No active session to end')
       return null
     }
 
+    console.log(`[StudySessionManager] Ending session ${currentSessionId} with stats:`, await this.getCurrentStats())
+
     try {
       const endStudySession = httpsCallable(functions, 'endStudySession')
-      const result = await endStudySession({
-        sessionId: this.currentSessionId,
-        ...this.currentStats
-      })
+      const requestData = {
+        sessionId: currentSessionId,
+        ...await this.getCurrentStats()
+      }
+
+      console.log(`[StudySessionManager] Calling endStudySession with data:`, requestData)
+      const result = await endStudySession(requestData)
       const data = result.data as any
 
+      console.log(`[StudySessionManager] endStudySession response:`, data)
+
       if (data.success) {
-        const finalStats = this.currentStats
-        this.currentSessionId = null
-        this.currentStats = {
-          quizCount: 0,
-          correctAnswers: 0,
-          totalAnswers: 0,
-          videosWatched: 0
+        const finalStats = await this.getCurrentStats()
+        await this.clearSessionData()
+
+        // Notify background script about session end
+        try {
+          chrome.runtime.sendMessage({
+            type: 'SESSION_ENDED'
+          })
+        } catch (error) {
+          console.warn('Failed to notify background script of session end:', error)
         }
-        
+
         console.log('Study session ended successfully:', data.stats)
         return finalStats
       } else {
+        console.error('endStudySession returned failure:', data)
         throw new Error('Failed to end study session')
       }
     } catch (error) {
       console.error('Error ending study session:', error)
+      console.error('Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        sessionId: currentSessionId,
+        stats: await this.getCurrentStats()
+      })
       throw error
     }
   }
@@ -98,16 +160,19 @@ export class StudySessionManager {
    * Record a quiz attempt
    */
   static async recordQuizAttempt(isCorrect: boolean): Promise<void> {
-    if (!this.currentSessionId) {
-      console.warn('No active study session for quiz attempt')
+    const currentSessionId = await this.getCurrentSessionId()
+    if (!currentSessionId) {
+      console.warn('No active session to record quiz attempt')
       return
     }
 
-    this.currentStats.quizCount++
-    this.currentStats.totalAnswers++
+    const currentStats = await this.getCurrentStats()
+    currentStats.quizCount++
+    currentStats.totalAnswers++
     if (isCorrect) {
-      this.currentStats.correctAnswers++
+      currentStats.correctAnswers++
     }
+    await this.setCurrentStats(currentStats)
 
     await this.updateSession()
   }
@@ -116,12 +181,16 @@ export class StudySessionManager {
    * Record a video watched
    */
   static async recordVideoWatched(): Promise<void> {
-    if (!this.currentSessionId) {
-      console.warn('No active study session for video tracking')
+    const currentSessionId = await this.getCurrentSessionId()
+    if (!currentSessionId) {
+      console.warn('No active session to record video watch')
       return
     }
 
-    this.currentStats.videosWatched++
+    const currentStats = await this.getCurrentStats()
+    currentStats.videosWatched++
+    await this.setCurrentStats(currentStats)
+
     await this.updateSession()
   }
 
@@ -129,13 +198,15 @@ export class StudySessionManager {
    * Update the current session with latest stats
    */
   private static async updateSession(): Promise<void> {
-    if (!this.currentSessionId) return
+    const currentSessionId = await this.getCurrentSessionId()
+    if (!currentSessionId) return
 
     try {
       const updateStudySession = httpsCallable(functions, 'updateStudySession')
+      const currentStats = await this.getCurrentStats()
       await updateStudySession({
-        sessionId: this.currentSessionId,
-        ...this.currentStats
+        sessionId: currentSessionId,
+        ...currentStats
       })
     } catch (error) {
       console.error('Error updating study session:', error)
@@ -145,18 +216,19 @@ export class StudySessionManager {
   /**
    * Get current session info
    */
-  static getCurrentSession(): { sessionId: string | null, stats: StudySessionStats } {
+  static async getCurrentSession(): Promise<{ sessionId: string | null, stats: StudySessionStats }> {
     return {
-      sessionId: this.currentSessionId,
-      stats: { ...this.currentStats }
+      sessionId: await this.getCurrentSessionId(),
+      stats: await this.getCurrentStats()
     }
   }
 
   /**
    * Check if there's an active session
    */
-  static hasActiveSession(): boolean {
-    return this.currentSessionId !== null
+  static async hasActiveSession(): Promise<boolean> {
+    const currentSessionId = await this.getCurrentSessionId()
+    return currentSessionId !== null
   }
 
   /**
@@ -195,6 +267,28 @@ export class StudySessionManager {
       }
     } catch (error) {
       console.error('Error migrating subjects:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Force end any active session (used for cleanup)
+   */
+  static async forceEndActiveSession(): Promise<void> {
+    try {
+      // Try to end via background script first
+      chrome.runtime.sendMessage({
+        type: 'END_ACTIVE_SESSION'
+      }, (_response) => {
+        if (chrome.runtime.lastError) {
+          console.warn('Background script not available, ending session directly')
+        }
+      })
+
+      // Also clear local state
+      await this.clearSessionData()
+    } catch (error) {
+      console.error('Error force ending session:', error)
       throw error
     }
   }

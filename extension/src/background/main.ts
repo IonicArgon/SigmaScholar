@@ -19,11 +19,18 @@ const auth = getAuth(app)
 const functions = getFunctions(app, 'us-central1')
 
 let currentUser: User | null = null
+let activeSessionCleanupTimer: number | null = null
 
 // Monitor auth state
 onAuthStateChanged(auth, (user) => {
   currentUser = user
   console.log('[Background] Auth state changed:', user ? 'Authenticated' : 'Not authenticated')
+  
+  // If user logs out, clean up any active sessions
+  if (!user && activeSessionCleanupTimer) {
+    clearTimeout(activeSessionCleanupTimer)
+    activeSessionCleanupTimer = null
+  }
 })
 
 // Handle messages from content scripts
@@ -31,6 +38,21 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   if (request.type === 'GENERATE_QUIZ') {
     handleQuizGeneration(request.data, sendResponse)
     return true // Keep message channel open for async response
+  }
+  
+  if (request.type === 'SESSION_STARTED') {
+    handleSessionStarted(request.data, sendResponse)
+    return true
+  }
+  
+  if (request.type === 'SESSION_ENDED') {
+    handleSessionEnded(sendResponse)
+    return true
+  }
+  
+  if (request.type === 'END_ACTIVE_SESSION') {
+    handleEndActiveSession(sendResponse)
+    return true
   }
 })
 
@@ -62,6 +84,85 @@ async function handleQuizGeneration(data: { subject: string; youtubeContext: str
     sendResponse({ 
       error: error instanceof Error ? error.message : 'Unknown error occurred'
     })
+  }
+}
+
+// Session management handlers
+async function handleSessionStarted(data: { sessionId: string }, sendResponse: (response: any) => void) {
+  try {
+    console.log('[Background] Session started:', data.sessionId)
+    
+    // Set up automatic session cleanup after 4 hours of inactivity
+    if (activeSessionCleanupTimer) {
+      clearTimeout(activeSessionCleanupTimer)
+    }
+    
+    activeSessionCleanupTimer = setTimeout(async () => {
+      console.log('[Background] Auto-ending inactive session:', data.sessionId)
+      await endSessionCleanup(data.sessionId)
+    }, 4 * 60 * 60 * 1000) // 4 hours
+    
+    sendResponse({ success: true })
+  } catch (error) {
+    console.error('[Background] Error handling session start:', error)
+    sendResponse({ error: error instanceof Error ? error.message : 'Unknown error' })
+  }
+}
+
+async function handleSessionEnded(sendResponse: (response: any) => void) {
+  try {
+    console.log('[Background] Session ended by user')
+    
+    if (activeSessionCleanupTimer) {
+      clearTimeout(activeSessionCleanupTimer)
+      activeSessionCleanupTimer = null
+    }
+    
+    sendResponse({ success: true })
+  } catch (error) {
+    console.error('[Background] Error handling session end:', error)
+    sendResponse({ error: error instanceof Error ? error.message : 'Unknown error' })
+  }
+}
+
+async function handleEndActiveSession(sendResponse: (response: any) => void) {
+  try {
+    console.log('[Background] Force ending active session')
+    
+    if (!currentUser) {
+      sendResponse({ error: 'User not authenticated' })
+      return
+    }
+    
+    // Call Firebase function to end any active session
+    const endStudySession = httpsCallable(functions, 'endStudySession')
+    await endStudySession({ forceEnd: true })
+    
+    if (activeSessionCleanupTimer) {
+      clearTimeout(activeSessionCleanupTimer)
+      activeSessionCleanupTimer = null
+    }
+    
+    sendResponse({ success: true })
+  } catch (error) {
+    console.error('[Background] Error force ending session:', error)
+    sendResponse({ error: error instanceof Error ? error.message : 'Unknown error' })
+  }
+}
+
+async function endSessionCleanup(sessionId: string) {
+  try {
+    if (!currentUser) {
+      console.log('[Background] Cannot end session - user not authenticated')
+      return
+    }
+    
+    const endStudySession = httpsCallable(functions, 'endStudySession')
+    await endStudySession({ sessionId, autoEnded: true })
+    
+    console.log('[Background] Session auto-ended:', sessionId)
+  } catch (error) {
+    console.error('[Background] Error auto-ending session:', error)
   }
 }
 

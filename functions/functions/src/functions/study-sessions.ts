@@ -36,34 +36,12 @@ export const startStudySession = onCall<{
       correctAnswers: 0,
       totalAnswers: 0,
       videosWatched: 0,
-      status: 'active'
+      status: 'active',
+      updatedAt: FieldValue.serverTimestamp()
     }
     
     // Add session to study-sessions collection
     await firestore.collection('study-sessions').doc(sessionId).set(sessionData)
-    
-    // Update user's subject session count
-    const userRef = firestore.collection('users').doc(auth.token.uid)
-    const userDoc = await userRef.get()
-    
-    if (userDoc.exists) {
-      const userData = userDoc.data()
-      const subjects = userData?.subjects || []
-      
-      // Find and update the subject's session count
-      const updatedSubjects = subjects.map((subj: any) => {
-        if (subj.name === subject) {
-          return {
-            ...subj,
-            sessionCount: (subj.sessionCount || 0) + 1,
-            lastSessionDate: new Date().toISOString()
-          }
-        }
-        return subj
-      })
-      
-      await userRef.update({ subjects: updatedSubjects })
-    }
     
     console.log(`[startStudySession] Session ${sessionId} started successfully`)
     
@@ -80,72 +58,142 @@ export const startStudySession = onCall<{
 })
 
 /**
- * End a study session and record final stats
+ * End a study session
  */
 export const endStudySession = onCall<{
-  sessionId: string
+  sessionId?: string
   quizCount?: number
   correctAnswers?: number
   totalAnswers?: number
   videosWatched?: number
+  forceEnd?: boolean
+  autoEnded?: boolean
 }>({}, async (request) => {
   const { auth, data } = request
   
   if (!auth) {
     throw new Error('Authentication required')
   }
+
+  const { uid } = auth.token
+  const { sessionId, quizCount = 0, correctAnswers = 0, totalAnswers = 0, videosWatched = 0, forceEnd = false, autoEnded = false } = data
   
-  const { sessionId, quizCount = 0, correctAnswers = 0, totalAnswers = 0, videosWatched = 0 } = data
-  
-  if (!sessionId) {
-    throw new Error('Session ID is required')
-  }
-  
-  console.log(`[endStudySession] Ending session: ${sessionId}`)
+  console.log(`[endStudySession] Called for UID: ${uid}, sessionId: ${sessionId}, forceEnd: ${forceEnd}, autoEnded: ${autoEnded}`)
   
   try {
-    const sessionRef = firestore.collection('study-sessions').doc(sessionId)
-    const sessionDoc = await sessionRef.get()
+    let session: any = null
     
-    if (!sessionDoc.exists) {
-      throw new Error('Study session not found')
+    if (sessionId) {
+      // End specific session
+      console.log(`[endStudySession] Looking for specific session: ${sessionId}`)
+      const sessionDoc = await firestore.collection('study-sessions').doc(sessionId).get()
+      if (!sessionDoc.exists) {
+        console.error(`[endStudySession] Session ${sessionId} not found`)
+        throw new Error('Session not found')
+      }
+      if (sessionDoc.data()?.userId !== uid) {
+        console.error(`[endStudySession] Session ${sessionId} unauthorized for user ${uid}`)
+        throw new Error('Session unauthorized')
+      }
+      session = { id: sessionDoc.id, ...sessionDoc.data() }
+      console.log(`[endStudySession] Found session:`, session)
+    } else {
+      // Find and end any active session for this user
+      console.log(`[endStudySession] Looking for active sessions for user: ${uid}`)
+      const activeSessions = await firestore.collection('study-sessions')
+        .where('userId', '==', uid)
+        .where('status', '==', 'active')
+        .get()
+      
+      console.log(`[endStudySession] Found ${activeSessions.docs.length} active sessions`)
+      
+      if (activeSessions.empty) {
+        if (forceEnd) {
+          console.log(`[endStudySession] No active session to force end`)
+          return {
+            success: true,
+            message: 'No active session to end'
+          }
+        }
+        console.error(`[endStudySession] No active session found for user ${uid}`)
+        throw new Error('No active session found')
+      }
+      
+      // Use the first active session
+      const sessionDoc = activeSessions.docs[0]
+      session = { id: sessionDoc.id, ...sessionDoc.data() }
+      console.log(`[endStudySession] Using active session:`, session)
     }
     
-    const sessionData = sessionDoc.data()
-    
-    // Verify session belongs to user
-    if (sessionData?.userId !== auth.token.uid) {
-      throw new Error('Unauthorized access to study session')
+    // Calculate final stats
+    const finalStats = {
+      quizCount: Math.max(quizCount, session.quizCount || 0),
+      correctAnswers: Math.max(correctAnswers, session.correctAnswers || 0),
+      totalAnswers: Math.max(totalAnswers, session.totalAnswers || 0),
+      videosWatched: Math.max(videosWatched, session.videosWatched || 0),
+      accuracy: 0
     }
     
-    // Update session with final stats
-    await sessionRef.update({
+    finalStats.accuracy = finalStats.totalAnswers > 0 ? 
+      Math.round((finalStats.correctAnswers / finalStats.totalAnswers) * 100) : 0
+    
+    console.log(`[endStudySession] Final stats calculated:`, finalStats)
+    
+    // Update session document
+    const updateData: any = {
       endTime: FieldValue.serverTimestamp(),
-      quizCount: quizCount,
-      correctAnswers: correctAnswers,
-      totalAnswers: totalAnswers,
-      videosWatched: videosWatched,
       status: 'completed',
-      accuracy: totalAnswers > 0 ? (correctAnswers / totalAnswers) * 100 : 0
-    })
+      quizCount: finalStats.quizCount,
+      correctAnswers: finalStats.correctAnswers,
+      totalAnswers: finalStats.totalAnswers,
+      videosWatched: finalStats.videosWatched,
+      accuracy: finalStats.accuracy,
+      updatedAt: FieldValue.serverTimestamp()
+    }
     
-    console.log(`[endStudySession] Session ${sessionId} ended successfully`)
+    if (autoEnded) {
+      updateData.endReason = 'auto_timeout'
+    } else if (forceEnd) {
+      updateData.endReason = 'force_ended'
+    } else {
+      updateData.endReason = 'user_ended'
+    }
+    
+    console.log(`[endStudySession] Updating session ${session.id} with data:`, updateData)
+    await firestore.collection('study-sessions').doc(session.id).update(updateData)
+    console.log(`[endStudySession] Session document updated successfully`)
+    
+    // Update subject session count and last session date in the subjects collection
+    const subjectsQuery = await firestore.collection('subjects')
+      .where('userId', '==', uid)
+      .where('name', '==', session.subject)
+      .get()
+    
+    console.log(`[endStudySession] Looking for subject "${session.subject}" for user ${uid}`)
+    if (!subjectsQuery.empty) {
+      const subjectRef = subjectsQuery.docs[0].ref
+      console.log(`[endStudySession] Updating subject session count for: ${session.subject}`)
+      await subjectRef.update({
+        sessionCount: FieldValue.increment(1),
+        lastSessionDate: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp()
+      })
+      console.log(`[endStudySession] Subject updated successfully`)
+    } else {
+      console.warn(`[endStudySession] Subject "${session.subject}" not found for user ${uid}`)
+    }
+    
+    console.log(`[endStudySession] Session ${session.id} ended successfully for UID: ${uid} (${updateData.endReason})`)
     
     return {
       success: true,
-      message: 'Study session ended successfully',
-      stats: {
-        quizCount,
-        correctAnswers,
-        totalAnswers,
-        videosWatched,
-        accuracy: totalAnswers > 0 ? (correctAnswers / totalAnswers) * 100 : 0
-      }
+      sessionId: session.id,
+      stats: finalStats,
+      message: 'Study session ended successfully'
     }
-    
   } catch (error) {
-    console.error(`[endStudySession] Error:`, error)
-    throw new Error(`Failed to end study session: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    console.error('Error ending study session:', error)
+    throw new Error('Failed to end study session')
   }
 })
 

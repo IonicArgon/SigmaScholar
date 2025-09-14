@@ -32,7 +32,7 @@ export class StudyModeTest {
       
       // 4. Check current session stats
       console.log('4. Checking session stats...')
-      const currentSession = StudySessionManager.getCurrentSession()
+      const currentSession = await StudySessionManager.getCurrentSession()
       console.log('Current session stats:', currentSession.stats)
       
       // 5. Test ending the session
