@@ -448,29 +448,59 @@
 
 .floating-particle {
   position: absolute;
-  width: 6px;
-  height: 6px;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
   border-radius: 50%;
-  opacity: 0.6;
+  opacity: 0.7;
+  filter: blur(0.5px);
 }
 
 .particle-1 {
-  top: 20%;
-  left: 10%;
-  animation: float-1 4s ease-in-out infinite;
+  width: 8px;
+  height: 8px;
+  top: 15%;
+  left: 8%;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  animation: float-1 6s ease-in-out infinite;
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
 }
 
 .particle-2 {
-  top: 60%;
-  right: 15%;
-  animation: float-2 3s ease-in-out infinite 1s;
+  width: 6px;
+  height: 6px;
+  top: 65%;
+  right: 12%;
+  background: linear-gradient(135deg, #ec4899, #f97316);
+  animation: float-2 4s ease-in-out infinite 1.5s;
+  box-shadow: 0 0 15px rgba(236, 72, 153, 0.4);
 }
 
 .particle-3 {
-  bottom: 30%;
-  left: 20%;
-  animation: float-3 5s ease-in-out infinite 2s;
+  width: 10px;
+  height: 10px;
+  bottom: 25%;
+  left: 15%;
+  background: linear-gradient(135deg, #8b5cf6, #ec4899);
+  animation: float-3 7s ease-in-out infinite 3s;
+  box-shadow: 0 0 25px rgba(139, 92, 246, 0.4);
+}
+
+.particle-4 {
+  width: 4px;
+  height: 4px;
+  top: 40%;
+  right: 25%;
+  background: linear-gradient(135deg, #3b82f6, #6366f1);
+  animation: float-4 5s ease-in-out infinite 0.5s;
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.4);
+}
+
+.particle-5 {
+  width: 7px;
+  height: 7px;
+  top: 80%;
+  left: 70%;
+  background: linear-gradient(135deg, #f59e0b, #ec4899);
+  animation: float-5 4.5s ease-in-out infinite 2.5s;
+  box-shadow: 0 0 18px rgba(245, 158, 11, 0.4);
 }
 
 /* Animations */
