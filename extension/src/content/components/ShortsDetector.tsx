@@ -71,7 +71,7 @@ export const ShortsDetector: React.FC = () => {
   const handleShortViewed = async () => {
     try {
       // Increment shorts count
-      const newCount = await ShortsTracker.incrementShortsCount()
+      await ShortsTracker.incrementShortsCount()
       
       // Record video watched in study session
       try {
@@ -87,7 +87,7 @@ export const ShortsDetector: React.FC = () => {
         await loadAndShowQuiz()
       }
       
-      console.log(`Shorts viewed: ${newCount}`)
+      // Shorts viewed count updated
     } catch (error) {
       console.error('Error handling short view:', error)
     }
@@ -95,19 +95,68 @@ export const ShortsDetector: React.FC = () => {
 
   // YouTube video control functions
   const pauseYouTubeVideo = () => {
-    const video = document.querySelector('video') as HTMLVideoElement
-    if (video && !video.paused) {
-      setWasVideoPaused(false)
-      video.pause()
-    } else if (video && video.paused) {
-      setWasVideoPaused(true)
+    // Try multiple selectors for YouTube Shorts video
+    const selectors = [
+      'video',
+      '.html5-video-player video',
+      '#shorts-player video',
+      '[data-layer="4"] video',
+      '.ytd-shorts video'
+    ]
+    
+    let video: HTMLVideoElement | null = null
+    for (const selector of selectors) {
+      video = document.querySelector(selector) as HTMLVideoElement
+      if (video) break
+    }
+    
+    if (video) {
+      // Video state checked
+      if (!video.paused) {
+        setWasVideoPaused(false)
+        video.pause()
+        // Video paused for quiz
+      } else {
+        setWasVideoPaused(true)
+        // Video was already paused
+      }
+    } else {
+      // No video element found
+      // Try again after a short delay
+      setTimeout(() => {
+        const retryVideo = document.querySelector('video') as HTMLVideoElement
+        if (retryVideo && !retryVideo.paused) {
+          setWasVideoPaused(false)
+          retryVideo.pause()
+          // Video paused for quiz (retry)
+        }
+      }, 500)
     }
   }
 
   const resumeYouTubeVideo = () => {
-    const video = document.querySelector('video') as HTMLVideoElement
-    if (video && !wasVideoPaused) {
-      video.play()
+    const selectors = [
+      'video',
+      '.html5-video-player video',
+      '#shorts-player video',
+      '[data-layer="4"] video',
+      '.ytd-shorts video'
+    ]
+    
+    let video: HTMLVideoElement | null = null
+    for (const selector of selectors) {
+      video = document.querySelector(selector) as HTMLVideoElement
+      if (video) break
+    }
+    
+    if (video) {
+      // Resuming video
+      if (!wasVideoPaused) {
+        video.play().catch(() => {})
+        // Video resumed
+      }
+    } else {
+      // No video element found for resume
     }
   }
 
@@ -123,6 +172,7 @@ export const ShortsDetector: React.FC = () => {
         setShowQuiz(true)
         setIsLoading(false)
         pauseYouTubeVideo()
+        // Showing retry question
         return
       }
 
@@ -142,10 +192,7 @@ export const ShortsDetector: React.FC = () => {
         throw new Error('No video data available')
       }
 
-      console.log('🎯 Generating quiz question for:', {
-        subject: selectedSubject,
-        video: videoData.title
-      })
+      // Generating quiz question
 
       // Prepare YouTube context for the Firebase function
       const youtubeContext = JSON.stringify({
@@ -190,7 +237,7 @@ export const ShortsDetector: React.FC = () => {
       setShowQuiz(true)
       pauseYouTubeVideo()
       
-      console.log('✅ Quiz question generated successfully')
+      // Quiz question generated successfully
       
     } catch (error) {
       console.error('Failed to load quiz question:', error)
@@ -244,11 +291,14 @@ export const ShortsDetector: React.FC = () => {
     if (!correct && currentQuestion) {
       setIncorrectQuestions(prev => [...prev, currentQuestion])
       setQuestionsUntilRetry(2) // Retry after 2 more questions
+      // Added question to retry queue
     }
     
     // Decrease retry counter if we have pending retries
     if (questionsUntilRetry > 0) {
-      setQuestionsUntilRetry(prev => prev - 1)
+      const newCount = questionsUntilRetry - 1
+      setQuestionsUntilRetry(newCount)
+      // Questions until retry countdown
     }
     
     setShowQuiz(false)
@@ -257,7 +307,7 @@ export const ShortsDetector: React.FC = () => {
   }
 
   const handleQuizSkip = () => {
-    console.log('Quiz skipped')
+    // Quiz skipped
     setShowQuiz(false)
     setCurrentQuestion(null)
     resumeYouTubeVideo()
