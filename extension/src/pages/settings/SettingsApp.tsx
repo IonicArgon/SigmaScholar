@@ -150,7 +150,28 @@ const SettingsApp: React.FC = () => {
       
       // Then upload files to the subject
       const fileArray = Array.from(selectedFiles)
-      await addFilesToSubject(fileArray)
+      
+      // Convert files to the format expected by the backend
+      const filesData = await Promise.all(
+        fileArray.map(async (file) => {
+          return new Promise<{name: string, size: number, type: string, data: string}>((resolve, reject) => {
+            const reader = new FileReader()
+            reader.onload = () => resolve({
+              name: file.name,
+              size: file.size,
+              type: file.type,
+              data: reader.result as string
+            })
+            reader.onerror = reject
+            reader.readAsDataURL(file)
+          })
+        })
+      )
+      
+      await addFilesToSubject({
+        subjectName: newSubjectName.trim(),
+        files: filesData
+      })
       
       setNewSubjectName('')
       setSelectedFiles(null)

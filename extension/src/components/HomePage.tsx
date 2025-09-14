@@ -2,14 +2,13 @@ import React, { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { StudySessionManager } from '../utils/studySessionManager'
 import { ShortsTracker } from '../utils/shortsTracker'
-import { getUserData, Subject } from '../lib/firestore'
 import { useFileProcessingStatus } from '../hooks/useFileProcessingStatus'
-import { showModal } from '../utils/modalUtils'
 import { auth } from '../lib/firebase'
 import { signOut } from 'firebase/auth'
 import { onSnapshot, collection, query, where, getDocs } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import './HomePage.css'
+import CustomModal from './CustomModal'
 
 export default function HomePage() {
   const { user, profile } = useAuth()
