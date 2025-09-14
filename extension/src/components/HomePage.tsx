@@ -65,6 +65,26 @@ export default function HomePage() {
     }
   }
 
+  const changeSubject = async (newSubject: string) => {
+    if (!isStudyModeActive) {
+      // If not in study mode, just change the selection
+      setSelectedSubject(newSubject)
+      return
+    }
+
+    try {
+      // Change subject while keeping session active
+      await ShortsTracker.setSelectedSubject(newSubject)
+      setSelectedSubject(newSubject)
+      
+      // Show confirmation
+      alert(`Study subject changed to ${newSubject}! 📚\n\nYour study session continues with the new subject.`)
+    } catch (error) {
+      console.error('Failed to change subject:', error)
+      alert('Failed to change subject. Please try again.')
+    }
+  }
+
   const stopStudyMode = async () => {
     try {
       // End the current study session
@@ -122,25 +142,31 @@ export default function HomePage() {
         {profile?.subjects && profile.subjects.length > 0 ? (
           <div className="subjects-overview">
             <h4>Your Study Subjects</h4>
-            <div className="subject-selector">
-              <label htmlFor="subject-select">Select Subject for Study Mode:</label>
-              <select
-                id="subject-select"
-                value={selectedSubject}
-                onChange={(e) => setSelectedSubject(e.target.value)}
-                className="subject-dropdown"
-              >
-                <option value="">Choose a subject...</option>
-                {profile.subjects.map((subject, index) => (
-                  <option key={index} value={subject.name}>
-                    {subject.name} ({subject.fileCount ?? 0} materials)
-                  </option>
-                ))}
-              </select>
+            <div className="current-subject-display">
+              <label>Current Study Subject:</label>
+              <div className="selected-subject-info">
+                {selectedSubject ? (
+                  <div className="subject-display-card">
+                    <span className="subject-name">{selectedSubject}</span>
+                    <span className="subject-materials">
+                      {profile.subjects.find(s => s.name === selectedSubject)?.fileCount ?? 0} materials
+                    </span>
+                  </div>
+                ) : (
+                  <div className="no-subject-selected">
+                    <span>No subject selected</span>
+                    <span className="selection-hint">Click a subject below to select it</span>
+                  </div>
+                )}
+              </div>
             </div>
             <div className="subjects-grid">
               {profile.subjects.map((subject, index) => (
-                <div key={index} className={`subject-card ${selectedSubject === subject.name ? 'selected' : ''}`}>
+                <div 
+                  key={index} 
+                  className={`subject-card ${selectedSubject === subject.name ? 'selected' : ''}`}
+                  onClick={() => setSelectedSubject(subject.name)}
+                >
                   <h5>{subject.name}</h5>
                   <p>Study materials and progress tracking</p>
                   <div className="subject-stats">
