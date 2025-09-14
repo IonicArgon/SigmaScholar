@@ -1,6 +1,50 @@
 import React, { useState, useEffect } from 'react'
 import './QuizBlocker.css'
 
+// Simple function to detect and parse math/chem blocks
+function parseMathBlocks(text: string): React.ReactElement[] {
+  const parts: React.ReactElement[] = []
+  let lastIndex = 0
+  let keyIndex = 0
+
+  // Find all [MATH]...[/MATH] and [CHEM]...[/CHEM] blocks
+  const mathRegex = /\[(MATH|CHEM)\](.*?)\[\/\1\]/g
+  let match
+
+  while ((match = mathRegex.exec(text)) !== null) {
+    // Add text before the math block
+    if (match.index > lastIndex) {
+      const beforeText = text.slice(lastIndex, match.index)
+      if (beforeText) {
+        parts.push(<span key={keyIndex++}>{beforeText}</span>)
+      }
+    }
+
+    // Add the math/chem block with styling
+    const blockType = match[1] // 'MATH' or 'CHEM'
+    const content = match[2]
+    const className = blockType === 'MATH' ? 'math-block' : 'chem-block'
+    
+    parts.push(
+      <span key={keyIndex++} className={className}>
+        {content}
+      </span>
+    )
+
+    lastIndex = match.index + match[0].length
+  }
+
+  // Add remaining text
+  if (lastIndex < text.length) {
+    const remainingText = text.slice(lastIndex)
+    if (remainingText) {
+      parts.push(<span key={keyIndex++}>{remainingText}</span>)
+    }
+  }
+
+  return parts.length > 0 ? parts : [<span key={0}>{text}</span>]
+}
+
 interface Question {
   id: string
   question: string
@@ -74,7 +118,7 @@ export const QuizBlocker: React.FC<QuizBlockerProps> = ({
         {/* Question Section */}
         <div className={`quiz-content ${showResult ? 'show-result' : ''}`}>
           <div className="question-section">
-            <h2 className="question-text">{question.question}</h2>
+            <h2 className="question-text">{parseMathBlocks(question.question)}</h2>
           </div>
 
           {/* Answer Options */}
@@ -93,7 +137,7 @@ export const QuizBlocker: React.FC<QuizBlockerProps> = ({
                 disabled={showResult}
               >
                 <div className="option-letter">{String.fromCharCode(65 + index)}</div>
-                <div className="option-text">{option}</div>
+                <div className="option-text">{parseMathBlocks(option)}</div>
                 {showResult && index === question.correctAnswer && (
                   <div className="check-icon">✓</div>
                 )}
@@ -115,7 +159,7 @@ export const QuizBlocker: React.FC<QuizBlockerProps> = ({
               </div>
               {question.explanation && (
                 <div className="explanation">
-                  {question.explanation}
+                  {parseMathBlocks(question.explanation)}
                 </div>
               )}
             </div>

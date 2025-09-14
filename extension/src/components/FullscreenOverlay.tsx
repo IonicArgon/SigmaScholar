@@ -73,12 +73,15 @@ export default function FullscreenOverlay({ isVisible, onContinue, platform, vie
               <div className="placeholder-content">
                 <div className="placeholder-box">
                   <h4>🔮 Coming Soon!</h4>
-                  <p>This is where personalized questions based on your notes and study materials will appear.</p>
+                  <p>This is where AI-generated questions based on your notes and study materials will appear.</p>
+                  
                   <ul>
                     <li>📝 Questions from your saved notes</li>
                     <li>🎯 Adaptive learning based on your subjects</li>
                     <li>⚡ Quick knowledge reinforcement</li>
                     <li>📊 Progress tracking</li>
+                    <li>📐 Full LaTeX math support for equations</li>
+                    <li>🤖 AI-powered question generation</li>
                   </ul>
                 </div>
                 

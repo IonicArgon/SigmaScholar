@@ -7,6 +7,18 @@ import { firestore } from '../lib/firebase'
 const cohereApiKey = defineSecret('COHERE_API_KEY')
 
 /**
+ * Processes math and chemistry blocks for better formatting
+ */
+function processMathBlocks(text: string): string {
+  return text
+    // Clean up any extra spaces around math blocks
+    .replace(/\s*\[MATH\]\s*/g, '[MATH]')
+    .replace(/\s*\[\/MATH\]\s*/g, '[/MATH]')
+    .replace(/\s*\[CHEM\]\s*/g, '[CHEM]')
+    .replace(/\s*\[\/CHEM\]\s*/g, '[/CHEM]')
+}
+
+/**
  * Generate a quiz question using document context and YouTube context
  */
 async function generateQuizQuestion(userId: string, subject: string, youtubeContext: string): Promise<any> {
@@ -58,16 +70,26 @@ Requirements:
 4. Always return valid JSON format
 5. Include explanations for all answers
 6. Wrong answers should not be explicitly marked or easily guessable
-7. For math content, use clear spacing and standard notation (e.g., "b² - 4ac", "x^2 + 2x + 1") for better readability. Blackboard bold math symbols should be wrapped with <b></b> tags.
+7. For mathematical content, use MATH BLOCKS with clear delimiters:
+   - Wrap all math expressions with [MATH] and [/MATH] tags
+   - Use simple notation inside: fractions as a/b, powers as x^2, roots as sqrt(x)
+   - Examples: [MATH]x^2 + 2x + 1 = 0[/MATH] or [MATH](x^2 + 4x)/2[/MATH]
+   - For Greek letters use names: [MATH]pi[/MATH], [MATH]alpha[/MATH], [MATH]theta[/MATH]
+   - For infinity use: [MATH]infinity[/MATH]
+8. For chemistry, use CHEM BLOCKS:
+   - Wrap chemical formulas with [CHEM] and [/CHEM] tags
+   - Examples: [CHEM]H2O[/CHEM], [CHEM]CH3COOH[/CHEM], [CHEM]Ca2+[/CHEM]
+   - For reactions: [CHEM]CH3CH2OH + O2 -> CH3COOH + H2O[/CHEM]
+9. These blocks make it easy to detect and render math/chemistry properly
 
 JSON Response Format:
 {
-  "question": "The question text",
+  "question": "The question text with [MATH]x^2[/MATH] or [CHEM]H2O[/CHEM] blocks",
   "type": "multiple_choice" | "true_false",
-  "options": ["Option A", "Option B", "Option C", "Option D"] | ["True", "False"],
+  "options": ["Option A with [MATH]formula[/MATH]", "Option B", "Option C", "Option D"] | ["True", "False"],
   "correctAnswer": 0,
   "explanations": {
-    "correct": "Why the correct answer is right",
+    "correct": "Why the correct answer is right with [MATH]math[/MATH] if needed",
     "incorrect": ["Why option 0 is wrong", "Why option 1 is wrong", ...]
   }
 }`
@@ -108,7 +130,7 @@ YOUTUBE VIDEO CONTEXT (JSON):
         {
           role: 'assistant',
           content: `{
-  "question": "Just like that orange cat trying to squeeze into an impossibly small box, what happens when the discriminant b² - 4ac in the quadratic formula is negative?",
+  "question": "Just like that orange cat trying to squeeze into an impossibly small box, what happens when the discriminant [MATH]b^2 - 4ac[/MATH] in the quadratic formula is negative?",
   "type": "multiple_choice",
   "options": [
     "The equation has exactly one real solution",
@@ -118,10 +140,10 @@ YOUTUBE VIDEO CONTEXT (JSON):
   ],
   "correctAnswer": 2,
   "explanations": {
-    "correct": "When the discriminant is negative, just like that stubborn cat refusing to accept reality, the equation produces complex (imaginary) solutions instead of real ones. The math still works, it's just living in imagination land!",
+    "correct": "When the discriminant [MATH]b^2 - 4ac < 0[/MATH], just like that stubborn cat refusing to accept reality, the equation produces complex (imaginary) solutions instead of real ones. The quadratic formula [MATH]x = (-b ± sqrt(b^2 - 4ac))/2a[/MATH] still works, it's just living in imagination land!",
     "incorrect": [
-      "One real solution happens when the discriminant equals zero - that's when the cat actually fits perfectly in the box",
-      "Two real solutions occur when the discriminant is positive - like having multiple boxes that actually fit the cat",
+      "One real solution happens when the discriminant equals zero ([MATH]b^2 - 4ac = 0[/MATH]) - that's when the cat actually fits perfectly in the box",
+      "Two real solutions occur when the discriminant is positive ([MATH]b^2 - 4ac > 0[/MATH]) - like having multiple boxes that actually fit the cat",
       "",
       "The quadratic formula never breaks down, it just gets creative with complex numbers when reality doesn't cooperate"
     ]
@@ -146,7 +168,7 @@ YOUTUBE VIDEO CONTEXT (JSON):
         {
           role: 'assistant',
           content: `{
-  "question": "Unlike those epic parkour fails where people think they can defy physics, alcohol metabolism in your liver actually follows chemistry rules. What does ethanol (CH₃CH₂OH) need to successfully transform into acetic acid without face-planting?",
+  "question": "Unlike those epic parkour fails where people think they can defy physics, alcohol metabolism in your liver actually follows chemistry rules. What does ethanol ([CHEM]CH3CH2OH[/CHEM]) need to successfully transform into acetic acid without face-planting?",
   "type": "multiple_choice",
   "options": [
     "Oxygen and specific enzymes (the proper landing technique)",
@@ -156,7 +178,7 @@ YOUTUBE VIDEO CONTEXT (JSON):
   ],
   "correctAnswer": 0,
   "explanations": {
-    "correct": "Just like those successful parkour videos need proper technique AND timing, ethanol oxidation needs both oxygen (O₂) and specific liver enzymes to stick the landing and produce acetic acid without failing spectacularly.",
+    "correct": "Just like those successful parkour videos need proper technique AND timing, ethanol oxidation needs both oxygen ([CHEM]O2[/CHEM]) and specific liver enzymes to stick the landing and produce acetic acid ([CHEM]CH3COOH[/CHEM]) without failing spectacularly. The reaction is: [CHEM]CH3CH2OH + O2 -> CH3COOH + H2O[/CHEM]",
     "incorrect": [
       "",
       "High temperature isn't needed - this isn't a concrete-melting fail compilation, it's a smooth enzymatic reaction at body temperature",
@@ -235,6 +257,26 @@ YOUTUBE VIDEO CONTEXT (JSON):
     
     // Parse JSON response
     const quizQuestion = JSON.parse(responseText)
+    
+    // Apply math block processing to all text fields
+    if (quizQuestion.question) {
+      quizQuestion.question = processMathBlocks(quizQuestion.question)
+    }
+    
+    if (quizQuestion.options && Array.isArray(quizQuestion.options)) {
+      quizQuestion.options = quizQuestion.options.map((option: string) => processMathBlocks(option))
+    }
+    
+    if (quizQuestion.explanations) {
+      if (quizQuestion.explanations.correct) {
+        quizQuestion.explanations.correct = processMathBlocks(quizQuestion.explanations.correct)
+      }
+      if (quizQuestion.explanations.incorrect && Array.isArray(quizQuestion.explanations.incorrect)) {
+        quizQuestion.explanations.incorrect = quizQuestion.explanations.incorrect.map((explanation: string) => 
+          explanation ? processMathBlocks(explanation) : explanation
+        )
+      }
+    }
     
     console.log(`[generateQuizQuestion] Generated quiz question for subject: ${subject}`)
     return quizQuestion

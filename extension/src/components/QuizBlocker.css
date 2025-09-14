@@ -1,3 +1,32 @@
+/* Math and Chemistry Block Styling */
+.math-block {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
+  font-size: 0.95em;
+  margin: 0 2px;
+  display: inline-block;
+  box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.chem-block {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
+  font-size: 0.95em;
+  margin: 0 2px;
+  display: inline-block;
+  box-shadow: 0 2px 4px rgba(240, 147, 251, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
 /* Quiz Blocker - Ultra Modern & Animated */
 .quiz-blocker-overlay {
   position: fixed;

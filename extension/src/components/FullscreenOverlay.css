@@ -229,6 +229,50 @@
   font-weight: 500;
 }
 
+/* Demo questions styling */
+.demo-questions {
+  margin: 1.5rem 0;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.demo-questions h5 {
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+  color: #fbbf24;
+  text-align: center;
+}
+
+.question-item {
+  margin: 0.75rem 0;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  border-left: 3px solid #10b981;
+}
+
+.question-text {
+  color: white;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+/* LaTeX styling within overlay */
+.question-text .latex-renderer {
+  color: #e0e7ff;
+}
+
+.question-text .katex {
+  color: #e0e7ff;
+}
+
+.question-text .katex-display {
+  margin: 0.5rem 0;
+  color: #f0f9ff;
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
   .overlay-content {
@@ -253,5 +297,9 @@
   .secondary-button {
     width: 100%;
     max-width: 300px;
+  }
+  
+  .question-text {
+    font-size: 0.9rem;
   }
 }

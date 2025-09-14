@@ -1,0 +1,63 @@
+/* Import KaTeX CSS - will be loaded dynamically */
+@import url('https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css');
+
+.latex-renderer {
+  display: inline-block;
+  vertical-align: middle;
+  line-height: 1;
+}
+
+.latex-renderer.display-mode {
+  display: block;
+  text-align: center;
+  margin: 1rem 0;
+}
+
+.inline-latex {
+  display: inline;
+  vertical-align: baseline;
+}
+
+/* Custom styling for math in questions */
+.question-latex {
+  color: inherit;
+  font-size: inherit;
+}
+
+.question-latex .katex {
+  font-size: 1.1em;
+}
+
+.question-latex .katex-display {
+  margin: 0.5rem 0;
+}
+
+/* Error styling */
+.latex-renderer .katex-error {
+  color: #cc0000;
+  background-color: rgba(204, 0, 0, 0.1);
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-family: monospace;
+  font-size: 0.9em;
+}
+
+/* Ensure proper spacing in mixed content */
+.mixed-content {
+  line-height: 1.6;
+}
+
+.mixed-content .latex-renderer {
+  margin: 0 2px;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .latex-renderer {
+    filter: invert(1) hue-rotate(180deg);
+  }
+  
+  .latex-renderer .katex-error {
+    filter: invert(1) hue-rotate(180deg);
+  }
+}
