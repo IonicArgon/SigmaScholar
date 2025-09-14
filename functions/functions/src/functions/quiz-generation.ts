@@ -210,7 +210,7 @@ YOUTUBE VIDEO CONTEXT (JSON):
         }
       ],
       maxTokens: 2500,
-      temperature: 0.5
+      temperature: 0.3
     })
     
     // Extract and parse the JSON response

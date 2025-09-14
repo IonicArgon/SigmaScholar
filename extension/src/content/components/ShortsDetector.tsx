@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { QuizBlocker } from '../../components/QuizBlocker'
 import { ShortsTracker } from '../../utils/shortsTracker'
+import { StudySessionManager } from '../../utils/studySessionManager'
 import { VideoExtractor } from '../utils/videoExtractor'
 
 interface QuizQuestion {
@@ -71,6 +72,13 @@ export const ShortsDetector: React.FC = () => {
     try {
       // Increment shorts count
       const newCount = await ShortsTracker.incrementShortsCount()
+      
+      // Record video watched in study session
+      try {
+        await StudySessionManager.recordVideoWatched()
+      } catch (error) {
+        console.error('Failed to record video watched:', error)
+      }
       
       // Check if quiz should be shown
       const shouldShow = await ShortsTracker.shouldShowQuiz()
@@ -222,8 +230,15 @@ export const ShortsDetector: React.FC = () => {
     }
   }
 
-  const handleQuizComplete = (correct: boolean) => {
+  const handleQuizComplete = async (correct: boolean) => {
     console.log(`Quiz completed. Correct: ${correct}`)
+    
+    // Record quiz attempt in study session
+    try {
+      await StudySessionManager.recordQuizAttempt(correct)
+    } catch (error) {
+      console.error('Failed to record quiz attempt:', error)
+    }
     
     // Handle incorrect answers - add to retry queue
     if (!correct && currentQuestion) {
@@ -239,9 +254,6 @@ export const ShortsDetector: React.FC = () => {
     setShowQuiz(false)
     setCurrentQuestion(null)
     resumeYouTubeVideo()
-    
-    // Optional: Track quiz performance
-    // You could store this data for analytics
   }
 
   const handleQuizSkip = () => {

@@ -84,7 +84,9 @@ export const completeOnboarding = onCall<OnboardingData>({}, async (request) => 
         userId: uid,
         name: subject.name,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        fileCount: subject.files.length
+        fileCount: subject.files.length,
+        sessionCount: 0,
+        lastSessionDate: null
       }
       batch.set(subjectRef, subjectData)
       

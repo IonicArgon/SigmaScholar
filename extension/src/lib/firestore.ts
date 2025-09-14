@@ -24,7 +24,9 @@ export interface Subject {
   userId: string
   name: string
   createdAt: any // Firestore Timestamp
-  fileCount: number
+  fileCount?: number
+  sessionCount?: number
+  lastSessionDate?: string
 }
 
 export interface FileMetadata {

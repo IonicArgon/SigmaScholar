@@ -1,8 +1,8 @@
 import { useAuth } from '@/contexts/AuthContext'
 import { signOut } from 'firebase/auth'
-import { auth, functions } from '@/lib/firebase'
-import { httpsCallable } from 'firebase/functions'
+import { auth } from '@/lib/firebase'
 import { ShortsTracker } from '@/utils/shortsTracker'
+import { StudySessionManager } from '@/utils/studySessionManager'
 import { useState, useEffect } from 'react'
 import './HomePage.css'
 
@@ -11,10 +11,13 @@ export default function HomePage() {
   const [selectedSubject, setSelectedSubject] = useState<string>('')
   const [isStudyModeActive, setIsStudyModeActive] = useState(false)
 
-  // Load current study mode settings on component mount
+  // Load current study mode settings and migrate subjects on component mount
   useEffect(() => {
     const loadStudyModeSettings = async () => {
       try {
+        // Migrate subjects to ensure they have sessionCount property
+        await StudySessionManager.migrateSubjects()
+        
         const currentSubject = await ShortsTracker.getSelectedSubject()
         const settings = await ShortsTracker.getQuizSettings()
         
@@ -45,6 +48,9 @@ export default function HomePage() {
     }
 
     try {
+      // Start a new study session
+      await StudySessionManager.startSession(selectedSubject)
+      
       // Save selected subject and enable quiz blocker
       await ShortsTracker.setSelectedSubject(selectedSubject)
       await ShortsTracker.updateQuizSettings({ enabled: true })
@@ -61,10 +67,20 @@ export default function HomePage() {
 
   const stopStudyMode = async () => {
     try {
+      // End the current study session
+      const finalStats = await StudySessionManager.endSession()
+      
       await ShortsTracker.updateQuizSettings({ enabled: false })
       setIsStudyModeActive(false)
       
-      alert('Study Mode deactivated. Enjoy your regular YouTube experience!')
+      if (finalStats) {
+        const accuracy = finalStats.totalAnswers > 0 ? 
+          Math.round((finalStats.correctAnswers / finalStats.totalAnswers) * 100) : 0
+        
+        alert(`Study Mode deactivated! 📊\n\nSession Summary:\n• ${finalStats.quizCount} quizzes completed\n• ${finalStats.correctAnswers}/${finalStats.totalAnswers} correct answers (${accuracy}%)\n• ${finalStats.videosWatched} videos watched\n\nEnjoy your regular YouTube experience!`)
+      } else {
+        alert('Study Mode deactivated. Enjoy your regular YouTube experience!')
+      }
     } catch (error) {
       console.error('Failed to stop study mode:', error)
       alert('Failed to stop study mode. Please try again.')
@@ -78,160 +94,6 @@ export default function HomePage() {
     window.close()
   }
 
-  const testQuizGeneration = async () => {
-    try {
-      const generateQuiz = httpsCallable(functions, 'generateQuiz')
-      
-      // Test data
-      const testData = {
-        subject: 'Calculus',
-        youtubeContext: JSON.stringify({
-          title: 'Watching Cat Videos for 10 Hours Straight',
-          description: 'The ultimate procrastination compilation',
-          channelName: 'ProcrastinationNation',
-          transcript: 'Meow meow purr purr... *keyboard typing sounds* ... oh no I have an assignment due tomorrow'
-        })
-      }
-
-      const result = await generateQuiz(testData)
-      const data = result.data as any
-      
-      // Safely handle the quiz data structure
-      const quiz = data.quiz || data
-      
-      // Filter wrong answers to exclude the correct answer
-      const allOptions = quiz.options || []
-      const correctAnswerIndex = quiz.correctAnswer
-      const wrongAnswers = allOptions.filter((_: string, index: number) => index !== correctAnswerIndex)
-      
-      // Get explanations
-      const correctExplanation = quiz.explanations?.correct || 'No explanation provided'
-      
-      // Create a detailed output for the user
-      const quizOutput = `
-🧠 QUIZ GENERATED SUCCESSFULLY! 🧠
-
-📚 Subject: ${testData.subject}
-🎥 YouTube Context: ${JSON.parse(testData.youtubeContext).title}
-
-❓ QUESTION:
-${quiz.question || 'No question found'}
-
-✅ CORRECT ANSWER:
-${allOptions[correctAnswerIndex] || 'No correct answer found'}
-
-❌ WRONG OPTIONS:
-${wrongAnswers.length > 0 ? wrongAnswers.join('\n') : 'No wrong answers found'}
-
-💡 EXPLANATION:
-${correctExplanation}
-
-🔗 Full Response:f
-${JSON.stringify(data, null, 2)}
-      `.trim()
-      
-      // Open a new window to display the quiz
-      const newWindow = window.open('', '_blank', 'width=600,height=800,scrollbars=yes')
-      if (newWindow) {
-        newWindow.document.write(`
-          <html>
-            <head>
-              <title>Quiz Generation Test Result</title>
-              <style>
-                body { 
-                  font-family: Arial, sans-serif; 
-                  padding: 20px; 
-                  background: #f5f5f5; 
-                  line-height: 1.6;
-                }
-                .container { 
-                  background: white; 
-                  padding: 30px; 
-                  border-radius: 10px; 
-                  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-                  max-width: 800px;
-                  margin: 0 auto;
-                }
-                h1 { color: #2563eb; text-align: center; }
-                .section { margin: 20px 0; padding: 15px; background: #f8fafc; border-radius: 8px; }
-                .question { font-size: 18px; font-weight: bold; color: #1e40af; }
-                .answer { color: #059669; font-weight: bold; }
-                .wrong { color: #dc2626; }
-                .explanation { color: #374151; font-style: italic; }
-                pre { background: #1f2937; color: #f9fafb; padding: 15px; border-radius: 5px; overflow-x: auto; }
-                /* Math content styling for better readability */
-                .math-content { 
-                  font-family: 'Times New Roman', serif; 
-                  font-size: 1.1em; 
-                  letter-spacing: 0.5px; 
-                  padding: 2px 4px; 
-                  background: #f8f9fa; 
-                  border-radius: 3px; 
-                }
-              </style>
-            </head>
-            <body>
-              <div class="container">
-                <h1>🧠 Quiz Generation Test Result</h1>
-                
-                <div class="section">
-                  <strong>📚 Subject:</strong> ${testData.subject}<br>
-                  <strong>🎥 YouTube Context:</strong> ${JSON.parse(testData.youtubeContext).title}
-                </div>
-                
-                <div class="section">
-                  <div class="question">❓ QUESTION:</div>
-                  <p>${quiz.question || 'No question found'}</p>
-                </div>
-                
-                <div class="section">
-                  <div class="answer">✅ CORRECT ANSWER:</div>
-                  <p>${quiz.options[quiz.correctAnswer] || 'No correct answer found'}</p>
-                </div>
-                
-                <div class="section">
-                  <div class="wrong">❌ WRONG OPTIONS:</div>
-                  <ul>
-                    ${wrongAnswers.length > 0 ? wrongAnswers.map((answer: string) => `<li>${answer}</li>`).join('') : '<li>No wrong answers found</li>'}
-                  </ul>
-                </div>
-                
-                <div class="section">
-                  <div class="explanation">💡 EXPLANATION:</div>
-                  <p>${correctExplanation}</p>
-                </div>
-                
-                <div class="section">
-                  <strong>🔗 Full JSON Response:</strong>
-                  <pre>${JSON.stringify(data, null, 2)}</pre>
-                </div>
-              </div>
-            </body>
-          </html>
-        `)
-        newWindow.document.close()
-      } else {
-        // Fallback to alert if popup blocked
-        alert(quizOutput)
-      }
-    } catch (error) {
-      const err = error as any
-      const errorDetails = `
-❌ QUIZ GENERATION FAILED ❌
-
-🚨 Error: ${err.message || 'Unknown error'}
-
-📝 Test Data Used:
-Subject: Calculus
-YouTube Context: Watching Cat Videos for 10 Hours Straight
-
-🔍 Full Error:
-${JSON.stringify(err, null, 2)}
-      `.trim()
-      
-      alert(errorDetails)
-    }
-  }
 
   return (
     <div className="home-container">
@@ -286,7 +148,7 @@ ${JSON.stringify(err, null, 2)}
                       <span>📚 {subject.fileCount ?? 0} materials</span>
                     </div>
                     <div className="subject-stat">
-                      <span>📊 {subject.files?.length ?? 0} study sessions</span>
+                      <span>📊 {subject.sessionCount ?? 0} study sessions</span>
                     </div>
                   </div>
                 </div>
@@ -320,10 +182,6 @@ ${JSON.stringify(err, null, 2)}
           <button className="action-button" onClick={openSettingsPage}>
             <span className="action-button-icon">⚙️</span>
             Settings
-          </button>
-          <button className="action-button" onClick={testQuizGeneration}>
-            <span className="action-button-icon">🧪</span>
-            Test Quiz
           </button>
         </div>
       </div>
