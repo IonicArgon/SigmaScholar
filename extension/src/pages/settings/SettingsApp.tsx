@@ -14,8 +14,8 @@ interface UserData {
   profile: {
     displayName: string
     email: string
-    createdAt: Date
-    updatedAt: Date
+    createdAt: string | { seconds: number } | any
+    updatedAt: string | { seconds: number } | any
   }
   subjects: (Subject & { files: FileMetadata[] })[]
 }
@@ -104,15 +104,14 @@ const SettingsApp: React.FC = () => {
       
       const data = await getUserData()
       
-      console.log('Raw getUserData response:', data)
       
       // Handle the actual data structure returned by Firestore
       const userData: UserData = {
         profile: {
-          displayName: data.profile.displayName || user?.displayName || 'User',
-          email: data.profile.email || user?.email || '',
-          createdAt: data.profile.createdAt ? new Date(data.profile.createdAt) : new Date(),
-          updatedAt: data.profile.updatedAt ? new Date(data.profile.updatedAt) : new Date()
+          displayName: data.profile?.displayName || user?.displayName || 'User',
+          email: data.profile?.email || user?.email || '',
+          createdAt: data.profile?.createdAt || new Date().toISOString(),
+          updatedAt: data.profile?.updatedAt || new Date().toISOString()
         },
         subjects: data.subjects || []
       }
@@ -448,7 +447,45 @@ const SettingsApp: React.FC = () => {
               <div className="profile-field">
                 <label>Member Since:</label>
                 <div className="display-field">
-                  <span>{new Date(userData.profile.createdAt).toLocaleDateString()}</span>
+                  <span>{(() => {
+                    try {
+                      if (!userData.profile.createdAt) {
+                        return 'Unknown';
+                      }
+                      
+                      let dateValue = userData.profile.createdAt;
+                      
+                      // Handle Firestore Timestamp string format: "Timestamp(seconds=1757793696, nanoseconds=68000000)"
+                      if (typeof dateValue === 'string' && dateValue.startsWith('Timestamp(')) {
+                        // Extract seconds and nanoseconds from string
+                        const match = dateValue.match(/seconds=(\d+).*?nanoseconds=(\d+)/);
+                        if (match) {
+                          const seconds = parseInt(match[1]);
+                          const nanoseconds = parseInt(match[2]);
+                          dateValue = seconds * 1000 + Math.floor(nanoseconds / 1000000);
+                        }
+                      }
+                      // Handle actual Firestore Timestamp objects
+                      else if (typeof dateValue === 'object' && dateValue !== null) {
+                        // Try to access .toDate() method if it exists (Firestore Timestamp)
+                        if (typeof (dateValue as any).toDate === 'function') {
+                          const date = (dateValue as any).toDate();
+                          return date.toLocaleDateString();
+                        }
+                        
+                        // Fallback to manual conversion
+                        if ('seconds' in dateValue) {
+                          const timestamp = dateValue as any;
+                          dateValue = timestamp.seconds * 1000 + Math.floor((timestamp.nanoseconds || 0) / 1000000);
+                        }
+                      }
+                      
+                      const date = new Date(dateValue);
+                      return isNaN(date.getTime()) ? 'Unknown' : date.toLocaleDateString();
+                    } catch (error) {
+                      return 'Unknown';
+                    }
+                  })()}</span>
                 </div>
               </div>
             </div>
