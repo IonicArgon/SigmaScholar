@@ -1004,10 +1004,9 @@ body {
 /* Checkbox Label Styling */
 .checkbox-label {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 4px;
   width: 100%;
-  cursor: pointer;
   margin-bottom: var(--space-3);
 }
 
@@ -1015,7 +1014,6 @@ body {
   font-weight: 600;
   color: hsl(var(--foreground));
   font-size: var(--font-size-base);
-  flex: 1;
 }
 
 .checkbox-label input[type="checkbox"] {
@@ -1024,8 +1022,9 @@ body {
   margin: 0;
   cursor: pointer;
   accent-color: hsl(var(--primary));
-  transform: scale(1.2) translate(8px, 6px);
-  transition: var(--transition-bounce);
+  transform: scale(1.2);
+  transition: none;
+  /* Removed auto-fade animation - will be triggered on click */
 }
 
 .checkbox-label input[type="checkbox"]:focus {
@@ -1034,23 +1033,24 @@ body {
 }
 
 .checkbox-label input[type="checkbox"]:active {
-  transform: scale(1.1) translate(8px, 6px);
   box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
+  animation: checkboxAppear 0.3s ease-out;
 }
 
-.checkbox-label input[type="checkbox"]:checked {
-  animation: checkboxBounce 0.3s ease-out;
-}
+/* Removed checkbox bounce animation and active transform to prevent any movement */
 
-@keyframes checkboxBounce {
+@keyframes checkboxAppear {
   0% {
-    transform: scale(1.2) translate(8px, 6px);
+    opacity: 0;
+    transform: scale(0.8);
   }
   50% {
-    transform: scale(1.4) translate(8px, 6px);
+    opacity: 0.5;
+    transform: scale(1.1);
   }
   100% {
-    transform: scale(1.2) translate(8px, 6px);
+    opacity: 1;
+    transform: scale(1.2);
   }
 }
 

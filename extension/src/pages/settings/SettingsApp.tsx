@@ -629,7 +629,7 @@ const SettingsApp: React.FC = () => {
               
               <div className="quiz-settings-form">
                 <div className="form-row">
-                  <label htmlFor="quiz-enabled" className="checkbox-label">
+                  <div className="checkbox-label">
                     <span className="checkbox-text">Enable Quiz Blocker</span>
                     <input
                       id="quiz-enabled"
@@ -637,7 +637,7 @@ const SettingsApp: React.FC = () => {
                       checked={quizSettings.enabled}
                       onChange={(e) => setQuizSettings(prev => ({ ...prev, enabled: e.target.checked }))}
                     />
-                  </label>
+                  </div>
                   <p className="field-description">
                     When enabled, quiz questions will appear after watching a certain number of shorts.
                   </p>
