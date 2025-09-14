@@ -216,6 +216,7 @@ export const ShortsDetector: React.FC = () => {
       
       setCurrentQuestion(fallbackQuestion)
       setShowQuiz(true)
+      pauseYouTubeVideo()
     } finally {
       setIsLoading(false)
     }
@@ -223,8 +224,21 @@ export const ShortsDetector: React.FC = () => {
 
   const handleQuizComplete = (correct: boolean) => {
     console.log(`Quiz completed. Correct: ${correct}`)
+    
+    // Handle incorrect answers - add to retry queue
+    if (!correct && currentQuestion) {
+      setIncorrectQuestions(prev => [...prev, currentQuestion])
+      setQuestionsUntilRetry(2) // Retry after 2 more questions
+    }
+    
+    // Decrease retry counter if we have pending retries
+    if (questionsUntilRetry > 0) {
+      setQuestionsUntilRetry(prev => prev - 1)
+    }
+    
     setShowQuiz(false)
     setCurrentQuestion(null)
+    resumeYouTubeVideo()
     
     // Optional: Track quiz performance
     // You could store this data for analytics
@@ -234,6 +248,7 @@ export const ShortsDetector: React.FC = () => {
     console.log('Quiz skipped')
     setShowQuiz(false)
     setCurrentQuestion(null)
+    resumeYouTubeVideo()
   }
 
   // Show loading state when generating quiz
