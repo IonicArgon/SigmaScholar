@@ -4,6 +4,7 @@ import { auth } from '@/lib/firebase'
 import { ShortsTracker } from '@/utils/shortsTracker'
 import { StudySessionManager } from '@/utils/studySessionManager'
 import { useState, useEffect } from 'react'
+import CustomModal from './CustomModal'
 import './HomePage.css'
 
 export default function HomePage() {
