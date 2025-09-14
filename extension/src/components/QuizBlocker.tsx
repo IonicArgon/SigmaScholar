@@ -146,12 +146,8 @@ export const QuizBlocker: React.FC<QuizBlockerProps> = ({
               className="submit-button"
               onClick={handleContinue}
             >
-              <span>Next Question</span>
+              <span>Keep Scrolling</span>
               <div className="button-glow" />
-            </button>
-            
-            <button className="skip-button" onClick={handleContinue}>
-              Keep Scrolling
             </button>
           </div>
         )}
