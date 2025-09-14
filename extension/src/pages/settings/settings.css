@@ -277,7 +277,7 @@ body {
 .profile-field label {
   font-weight: 600;
   color: var(--gray-800);
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-base);
   margin-bottom: var(--space-2);
 }
 
@@ -289,8 +289,9 @@ body {
 }
 
 .display-field span {
-  color: var(--gray-600);
-  font-size: var(--font-size-sm);
+  color: var(--gray-700);
+  font-size: var(--font-size-base);
+  font-weight: 500;
 }
 
 .edit-field {
@@ -408,6 +409,14 @@ body {
   border-radius: var(--radius-md);
   border: 1px solid rgba(255, 255, 255, 0.3);
   transition: var(--transition-normal);
+}
+
+.add-subject-form .form-row label {
+  display: block;
+  margin-bottom: var(--space-2);
+  font-weight: 600;
+  color: var(--gray-800);
+  font-size: var(--font-size-base);
 }
 
 .add-subject-form:hover {
@@ -697,21 +706,50 @@ body {
 .files-by-subject {
   display: flex;
   flex-direction: column;
-  gap: var(--space-8);
+  gap: var(--space-5);
 }
 
-.subject-files h4 {
-  margin: 0 0 var(--space-5) 0;
+.subject-files {
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  transition: var(--transition-normal);
+}
+
+.subject-files:hover {
+  background: rgba(255, 255, 255, 0.7);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.subject-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-3);
+}
+
+.subject-header h4 {
+  margin: 0;
   color: var(--gray-800);
-  font-size: var(--font-size-lg);
-  padding-bottom: var(--space-2);
-  border-bottom: 2px solid var(--primary-500);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+}
+
+.subject-actions {
+  display: flex;
+  gap: var(--space-2);
 }
 
 .no-files {
   color: var(--gray-500);
   font-style: italic;
-  margin: 0;
+  margin: var(--space-2) 0;
+  text-align: center;
+  padding: var(--space-4);
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: var(--radius-sm);
 }
 
 .files-grid {
@@ -941,12 +979,11 @@ body {
 }
 
 .quiz-settings-form .form-row label {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
+  display: block;
+  margin-bottom: var(--space-2);
   font-weight: 600;
   color: var(--gray-800);
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-base);
   cursor: pointer;
 }
 

@@ -27,7 +27,7 @@ const SettingsApp: React.FC = () => {
   const [userData, setUserData] = useState<UserData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'profile' | 'subjects' | 'files' | 'quiz'>('profile')
+  const [activeTab, setActiveTab] = useState<'profile' | 'subjects' | 'quiz'>('profile')
   
   // Debug logging
   console.log('SettingsApp rendering, user:', user)
@@ -41,7 +41,6 @@ const SettingsApp: React.FC = () => {
   const [addingSubject, setAddingSubject] = useState(false)
   
   // File management state
-  const [selectedSubject, setSelectedSubject] = useState<string>('')
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null)
 
   // Quiz settings state
@@ -120,9 +119,6 @@ const SettingsApp: React.FC = () => {
       
       setUserData(userData)
       setNewDisplayName(userData.profile.displayName)
-      if (userData.subjects.length > 0 && !selectedSubject) {
-        setSelectedSubject(userData.subjects[0].name)
-      }
     } catch (err) {
       console.error('Error loading user data:', err)
       setError('Failed to load user data. Please try again.')
@@ -176,10 +172,6 @@ const SettingsApp: React.FC = () => {
     try {
       await removeSubject(subjectName)
       
-      // Reset selected subject if it was deleted
-      if (selectedSubject === subjectName) {
-        setSelectedSubject('')
-      }
       
       await loadUserData()
     } catch (err) {
