@@ -42,10 +42,11 @@ export const QuizBlocker: React.FC<QuizBlockerProps> = ({
     setIsCorrect(correct)
     setShowResult(true)
     
-    // Auto-complete after showing result
-    setTimeout(() => {
-      onComplete(correct)
-    }, 2500)
+    // Remove auto-complete - let user manually continue
+  }
+
+  const handleContinue = () => {
+    onComplete(isCorrect)
   }
 
   const handleSkipQuiz = () => {
@@ -117,15 +118,12 @@ export const QuizBlocker: React.FC<QuizBlockerProps> = ({
                   {question.explanation}
                 </div>
               )}
-              <div className="continue-hint">
-                Continuing in a moment...
-              </div>
             </div>
           )}
         </div>
 
         {/* Action Buttons */}
-        {!showResult && (
+        {!showResult ? (
           <div className="quiz-actions">
             <button 
               className="submit-button"
@@ -141,6 +139,20 @@ export const QuizBlocker: React.FC<QuizBlockerProps> = ({
                 Skip Quiz
               </button>
             )}
+          </div>
+        ) : (
+          <div className="quiz-actions">
+            <button 
+              className="submit-button"
+              onClick={handleContinue}
+            >
+              <span>Next Question</span>
+              <div className="button-glow" />
+            </button>
+            
+            <button className="skip-button" onClick={handleContinue}>
+              Keep Scrolling
+            </button>
           </div>
         )}
 
