@@ -115,6 +115,7 @@ export const ShortsDetector: React.FC = () => {
         setShowQuiz(true)
         setIsLoading(false)
         pauseYouTubeVideo()
+        console.log('🔄 Showing retry question:', retryQuestion.question.substring(0, 50) + '...')
         return
       }
 
@@ -229,11 +230,14 @@ export const ShortsDetector: React.FC = () => {
     if (!correct && currentQuestion) {
       setIncorrectQuestions(prev => [...prev, currentQuestion])
       setQuestionsUntilRetry(2) // Retry after 2 more questions
+      console.log('❌ Added question to retry queue. Will retry after 2 more questions.')
     }
     
     // Decrease retry counter if we have pending retries
     if (questionsUntilRetry > 0) {
-      setQuestionsUntilRetry(prev => prev - 1)
+      const newCount = questionsUntilRetry - 1
+      setQuestionsUntilRetry(newCount)
+      console.log(`⏳ Questions until retry: ${newCount}`)
     }
     
     setShowQuiz(false)
