@@ -1,17 +1,21 @@
-import { useAuth } from '@/contexts/AuthContext'
+import React, { useState, useEffect } from 'react'
+import { useAuth } from '../contexts/AuthContext'
+import { StudySessionManager } from '../utils/studySessionManager'
+import { ShortsTracker } from '../utils/shortsTracker'
+import { getUserData, Subject } from '../lib/firestore'
+import { useFileProcessingStatus } from '../hooks/useFileProcessingStatus'
+import { showModal } from '../utils/modalUtils'
+import { auth } from '../lib/firebase'
 import { signOut } from 'firebase/auth'
-import { auth, db } from '@/lib/firebase'
 import { onSnapshot, collection, query, where, getDocs } from 'firebase/firestore'
-import { ShortsTracker } from '@/utils/shortsTracker'
-import { StudySessionManager } from '@/utils/studySessionManager'
-import { useState, useEffect } from 'react'
-import CustomModal from './CustomModal'
+import { db } from '@/lib/firebase'
 import './HomePage.css'
 
 export default function HomePage() {
   const { user, profile } = useAuth()
   const [selectedSubject, setSelectedSubject] = useState<string>('')
   const [isStudyModeActive, setIsStudyModeActive] = useState(false)
+  const { isSubjectReadyForStudy, getSubjectProcessingStats } = useFileProcessingStatus()
   const [modal, setModal] = useState<{
     isOpen: boolean
     title: string
@@ -65,7 +69,24 @@ export default function HomePage() {
 
   const startStudyMode = async () => {
     if (!selectedSubject) {
-      showModal('No Subject Selected', 'Please select a subject first!', 'warning')
+      setModal({
+        isOpen: true,
+        title: 'No Subject Selected',
+        content: 'Please select a subject first!',
+        type: 'warning'
+      })
+      return
+    }
+
+    // Check if subject is ready for study (no processing files)
+    if (!isSubjectReadyForStudy(selectedSubject)) {
+      const stats = getSubjectProcessingStats(selectedSubject)
+      setModal({
+        isOpen: true,
+        title: 'Subject Not Ready',
+        content: `Cannot start study session for **${selectedSubject}** because files are still being processed.\n\n**Processing Status:**\n- ${stats.processing} files processing\n- ${stats.completed} files ready\n- ${stats.failed} files failed\n\nPlease wait for all files to finish processing before starting your study session.`,
+        type: 'warning'
+      })
       return
     }
 
@@ -80,11 +101,12 @@ export default function HomePage() {
       setIsStudyModeActive(true)
       
       // Show confirmation
-      showModal(
-        'Study Mode Activated! 🧠',
-        `Study Mode is now active for **${selectedSubject}**!\n\nYou'll get quiz questions while watching YouTube Shorts to help you learn.`,
-        'success'
-      )
+      setModal({
+        isOpen: true,
+        title: 'Study Mode Activated! 🧠',
+        content: `Study Mode is now active for **${selectedSubject}**!\n\nYou'll get quiz questions while watching YouTube Shorts to help you learn.`,
+        type: 'success'
+      })
     } catch (error) {
       console.error('Failed to start study mode:', error)
       showModal('Error Starting Study Mode', 'Failed to start study mode. Please try again.', 'error')
@@ -285,12 +307,36 @@ export default function HomePage() {
                 >
                   <h5>{subject.name}</h5>
                   <p>Study materials and progress tracking</p>
-                  <div className="subject-stats">
+                  <div className="subject-info">
                     <div className="subject-stat">
                       <span>📚 {subject.fileCount ?? 0} materials</span>
                     </div>
                     <div className="subject-stat">
                       <span>📊 {subjectSessionCounts[subject.name] ?? 0} study sessions</span>
+                    </div>
+                    <div className="subject-status">
+                      {(() => {
+                        const stats = getSubjectProcessingStats(subject.name)
+                        const isReady = isSubjectReadyForStudy(subject.name)
+                        
+                        if (stats.total === 0) {
+                          return <span className="status-badge no-files">No files</span>
+                        }
+                        
+                        if (stats.processing > 0) {
+                          return <span className="status-badge processing">Processing ({stats.processing})</span>
+                        }
+                        
+                        if (stats.failed > 0 && stats.completed === 0) {
+                          return <span className="status-badge failed">Processing failed</span>
+                        }
+                        
+                        return (
+                          <span className={`status-badge ${isReady ? 'ready' : 'not-ready'}`}>
+                            {isReady ? 'Ready for Study' : 'Not Ready'}
+                          </span>
+                        )
+                      })()}
                     </div>
                   </div>
                 </div>

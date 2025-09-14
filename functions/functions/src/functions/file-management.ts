@@ -11,7 +11,7 @@ interface FileMetadata {
   storagePath: string
   downloadUrl?: string
   uploadedAt: Date
-  processingStatus: 'pending' | 'completed' | 'failed'
+  processingStatus: 'pending' | 'processing' | 'completed' | 'failed'
 }
 
 /**
@@ -100,7 +100,7 @@ export const addFilesToSubject = onCall<{
           storagePath: storagePath,
           downloadUrl: downloadUrl,
           uploadedAt: new Date(),
-          processingStatus: 'completed' as const
+          processingStatus: 'processing' as const
         }
       } catch (error) {
         console.error(`[addFilesToSubject] Failed to upload file ${file.name}:`, error)
@@ -128,7 +128,7 @@ export const addFilesToSubject = onCall<{
       batch.set(fileRef, fileData)
       
       // Trigger document processing for successfully uploaded files
-      if (fileMetadata.processingStatus === 'completed') {
+      if (fileMetadata.processingStatus === 'processing') {
         try {
           const { PubSub } = require('@google-cloud/pubsub')
           const pubsub = new PubSub()
@@ -161,7 +161,7 @@ export const addFilesToSubject = onCall<{
     // Commit all changes
     await batch.commit()
     
-    const successfulUploads = uploadedFiles.filter(f => f.processingStatus === 'completed').length
+    const successfulUploads = uploadedFiles.filter(f => f.processingStatus === 'processing').length
     console.log(`[addFilesToSubject] Added ${successfulUploads}/${uploadedFiles.length} files to "${subjectName}" for UID: ${uid}`)
     
     return {

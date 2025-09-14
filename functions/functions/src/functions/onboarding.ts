@@ -27,7 +27,7 @@ interface FileMetadata {
   storagePath: string
   downloadUrl?: string
   uploadedAt: Date
-  processingStatus: 'pending' | 'completed' | 'failed'
+  processingStatus: 'pending' | 'processing' | 'completed' | 'failed'
 }
 
 /**
@@ -147,7 +147,7 @@ export const completeOnboarding = onCall<OnboardingData>({}, async (request) => 
             storagePath: storagePath,
             downloadUrl: downloadUrl,
             uploadedAt: new Date(),
-            processingStatus: 'completed' as const
+            processingStatus: 'processing' as const
           }
         } catch (error) {
           console.error(`[completeOnboarding] Failed to upload file ${file.name}:`, error)
@@ -173,7 +173,7 @@ export const completeOnboarding = onCall<OnboardingData>({}, async (request) => 
         batch.set(fileRef, fileData)
         
         // Trigger document processing for successfully uploaded files
-        if (fileMetadata.processingStatus === 'completed') {
+        if (fileMetadata.processingStatus === 'processing') {
           try {
             const { PubSub } = require('@google-cloud/pubsub')
             const pubsub = new PubSub()

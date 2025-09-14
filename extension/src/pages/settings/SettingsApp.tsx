@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react'
-import { useAuth } from '@/contexts/AuthContext'
+import { useAuth } from '../../contexts/AuthContext'
+import { useFileProcessingStatus } from '../../hooks/useFileProcessingStatus'
+import './settings.css'
 import { updateUserProfile, addSubject, removeSubject, removeFileMetadata } from '@/lib/firestore'
 import { addFilesToSubject } from '@/lib/functions'
 import { getUserData, FileMetadata, Subject } from '@/lib/firestore'
 import { ShortsTracker, ShortsSettings } from '@/utils/shortsTracker'
-import { CohereAPI } from '@/content/utils/cohereAPI'
 
 
 // Use types from firestore.ts
@@ -24,10 +25,22 @@ const SettingsApp: React.FC = () => {
   console.log('SettingsApp component loaded!')
   
   const { user, loading: authLoading } = useAuth()
+  const [activeTab, setActiveTab] = useState<'profile' | 'subjects' | 'files' | 'quiz'>('profile')
+  
+  // User data state
   const [userData, setUserData] = useState<UserData | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'profile' | 'subjects' | 'quiz'>('profile')
+  
+  // File processing status
+  const { 
+    files: processingFiles, 
+    stats: processingStats, 
+    loading: processingLoading,
+    getFilesBySubject,
+    getSubjectProcessingStats,
+    isSubjectReadyForStudy
+  } = useFileProcessingStatus()
   
   // Debug logging
   console.log('SettingsApp rendering, user:', user)
@@ -45,7 +58,6 @@ const SettingsApp: React.FC = () => {
 
   // Quiz settings state
   const [quizSettings, setQuizSettings] = useState<ShortsSettings>({ quizFrequency: 5, enabled: true })
-  const [cohereApiKey, setCohereApiKey] = useState<string>('')
   const [savingQuizSettings, setSavingQuizSettings] = useState(false)
 
   // Removed Firebase Functions dependency
@@ -61,13 +73,6 @@ const SettingsApp: React.FC = () => {
     try {
       const settings = await ShortsTracker.getQuizSettings()
       setQuizSettings(settings)
-      
-      // Load API key from storage if available
-      const result = await chrome.storage.local.get('cohere_api_key')
-      if (result.cohere_api_key) {
-        setCohereApiKey(result.cohere_api_key)
-        CohereAPI.setApiKey(result.cohere_api_key)
-      }
     } catch (error) {
       console.error('Failed to load quiz settings:', error)
     }
@@ -80,16 +85,9 @@ const SettingsApp: React.FC = () => {
       // Save quiz frequency settings
       await ShortsTracker.updateQuizSettings(quizSettings)
       
-      // Save API key
-      if (cohereApiKey.trim()) {
-        await chrome.storage.local.set({ cohere_api_key: cohereApiKey.trim() })
-        CohereAPI.setApiKey(cohereApiKey.trim())
-      }
-      
       console.log('Quiz settings saved successfully')
     } catch (error) {
       console.error('Failed to save quiz settings:', error)
-      setError('Failed to save quiz settings. Please try again.')
     } finally {
       setSavingQuizSettings(false)
     }
@@ -352,6 +350,15 @@ const SettingsApp: React.FC = () => {
   const totalSize = userData.subjects.reduce((sum, subject) => 
     sum + subject.files.reduce((fileSum, file) => fileSum + file.fileSize, 0), 0
   )
+  
+  // Use processing stats for more accurate counts
+  const actualStats = processingStats.total > 0 ? processingStats : {
+    total: totalFiles,
+    processing: 0,
+    completed: totalFiles,
+    failed: 0,
+    pending: 0
+  }
 
   return (
     <div className="settings-container">
@@ -362,7 +369,7 @@ const SettingsApp: React.FC = () => {
 
       <div className="settings-stats">
         <div className="stat-card">
-          <h3>{totalFiles}</h3>
+          <h3>{actualStats.total}</h3>
           <p>Total Files</p>
         </div>
         <div className="stat-card">
@@ -373,6 +380,20 @@ const SettingsApp: React.FC = () => {
           <h3>{(totalSize / 1024 / 1024).toFixed(2)} MB</h3>
           <p>Storage Used</p>
         </div>
+        <div className="stat-card">
+          <h3>{actualStats.processing}</h3>
+          <p>Processing</p>
+        </div>
+        <div className="stat-card">
+          <h3>{actualStats.completed}</h3>
+          <p>Ready</p>
+        </div>
+        {actualStats.failed > 0 && (
+          <div className="stat-card error">
+            <h3>{actualStats.failed}</h3>
+            <p>Failed</p>
+          </div>
+        )}
       </div>
 
       <div className="settings-tabs">
@@ -570,44 +591,57 @@ const SettingsApp: React.FC = () => {
                         <p className="no-files">No files in this subject</p>
                       ) : (
                         <div className="files-grid">
-                          {subject.files.map((file) => (
-                            <div key={file.fileName} className="file-card">
-                              <div className="file-icon">
-                                {file.mimeType.startsWith('image/') ? '🖼️' : 
-                                 file.mimeType.includes('pdf') ? '📄' : 
-                                 file.mimeType.startsWith('text/') ? '📝' : 
-                                 file.mimeType.includes('word') ? '📄' : 
-                                 file.mimeType.includes('presentation') ? '📊' : '📁'}
+                          {subject.files.map((file, fileIndex) => {
+                            const processingFile = processingFiles.find(pf => pf.fileName === file.fileName)
+                            const currentStatus = processingFile?.processingStatus || file.processingStatus
+                            
+                            return (
+                              <div key={fileIndex} className="file-item">
+                                <div className="file-icon">📄</div>
+                                <div className="file-details">
+                                  <h4>{file.originalName}</h4>
+                                  <p className="file-meta">
+                                    {file.mimeType} • {(file.fileSize / 1024).toFixed(1)} KB
+                                  </p>
+                                  <div className="file-status">
+                                    <span className={`status-indicator ${currentStatus}`}>
+                                      {currentStatus === 'processing' && <span className="spinner">⟳</span>}
+                                      {currentStatus === 'completed' && <span className="check">✓</span>}
+                                      {currentStatus === 'failed' && <span className="error">✗</span>}
+                                      {currentStatus === 'pending' && <span className="pending">⏳</span>}
+                                    </span>
+                                    <span className="status-text">
+                                      {currentStatus === 'processing' && 'Processing...'}
+                                      {currentStatus === 'completed' && `Ready (${processingFile?.textLength || 0} chars)`}
+                                      {currentStatus === 'failed' && 'Processing failed'}
+                                      {currentStatus === 'pending' && 'Pending'}
+                                    </span>
+                                  </div>
+                                  {processingFile?.processedAt && (
+                                    <p className="file-processed-time">
+                                      Processed: {processingFile.processedAt.toLocaleString()}
+                                    </p>
+                                  )}
+                                </div>
+                                <div className="file-actions">
+                                  <button 
+                                    onClick={() => openFile(file)}
+                                    className="open-button"
+                                    title="Open file"
+                                  >
+                                    Open
+                                  </button>
+                                  <button 
+                                    onClick={() => removeFile(file.fileName, subject.name)}
+                                    className="delete-button"
+                                    title="Delete file"
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
                               </div>
-                              
-                              <div className="file-info">
-                                <h5 title={file.originalName}>{file.originalName}</h5>
-                                <p className="file-details">
-                                  {file.mimeType} • {(file.fileSize / 1024).toFixed(1)} KB
-                                </p>
-                                <p className="file-status">
-                                  Status: {file.processingStatus}
-                                </p>
-                              </div>
-                              
-                              <div className="file-actions">
-                                <button 
-                                  onClick={() => openFile(file)}
-                                  className="open-button"
-                                  title="Open file in new tab"
-                                >
-                                  Open
-                                </button>
-                                <button 
-                                  onClick={() => removeFile(file.fileName, subject.name)}
-                                  className="delete-button"
-                                  title="Delete file"
-                                >
-                                  Delete
-                                </button>
-                              </div>
-                            </div>
-                          ))}
+                            )
+                          })}
                         </div>
                       )}
                     </div>
@@ -663,20 +697,6 @@ const SettingsApp: React.FC = () => {
                   </p>
                 </div>
 
-                <div className="form-row">
-                  <label htmlFor="cohere-api-key">Cohere API Key (Optional):</label>
-                  <input
-                    id="cohere-api-key"
-                    type="password"
-                    value={cohereApiKey}
-                    onChange={(e) => setCohereApiKey(e.target.value)}
-                    placeholder="Enter your Cohere API key for dynamic questions"
-                  />
-                  <p className="field-description">
-                    Provide your Cohere API key to generate personalized quiz questions based on video content. 
-                    Without this, fallback questions will be used.
-                  </p>
-                </div>
 
                 <button
                   onClick={saveQuizSettings}
@@ -702,9 +722,9 @@ const SettingsApp: React.FC = () => {
                   <span className="stat-value">Every {quizSettings.quizFrequency} shorts</span>
                 </div>
                 <div className="stat-item">
-                  <span className="stat-label">API Status:</span>
-                  <span className={`stat-value ${cohereApiKey ? 'configured' : 'not-configured'}`}>
-                    {cohereApiKey ? 'API Key Configured' : 'Using Fallback Questions'}
+                  <span className="stat-label">Quiz Generation:</span>
+                  <span className="stat-value configured">
+                    Backend AI Service
                   </span>
                 </div>
               </div>
