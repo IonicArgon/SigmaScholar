@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react'
 import { QuizBlocker } from '../../components/QuizBlocker'
 import { ShortsTracker } from '../../utils/shortsTracker'
 import { VideoExtractor } from '../utils/videoExtractor'
-import { httpsCallable } from 'firebase/functions'
-import { functions } from '../../lib/firebase'
 
 interface QuizQuestion {
   id?: string
@@ -117,11 +115,23 @@ export const ShortsDetector: React.FC = () => {
         transcript: videoData.transcript || ''
       })
 
-      // Call Firebase function to generate quiz
-      const generateQuiz = httpsCallable(functions, 'generateQuiz')
-      const result = await generateQuiz({
-        subject: selectedSubject,
-        youtubeContext: youtubeContext
+      // Call Firebase function via message passing to background script
+      const result = await new Promise<any>((resolve, reject) => {
+        chrome.runtime.sendMessage({
+          type: 'GENERATE_QUIZ',
+          data: {
+            subject: selectedSubject,
+            youtubeContext: youtubeContext
+          }
+        }, (response) => {
+          if (chrome.runtime.lastError) {
+            reject(new Error(chrome.runtime.lastError.message))
+          } else if (response.error) {
+            reject(new Error(response.error))
+          } else {
+            resolve(response)
+          }
+        })
       })
 
       const data = result.data as any
@@ -143,6 +153,12 @@ export const ShortsDetector: React.FC = () => {
       
     } catch (error) {
       console.error('Failed to load quiz question:', error)
+      console.error('Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        type: typeof error,
+        error: error
+      })
       
       // Show fallback question if generation fails
       const fallbackQuestion: QuizQuestion = {
