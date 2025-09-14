@@ -812,11 +812,14 @@ body {
 .file-input-text {
   flex: 1;
   text-align: left;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
 }
 
 .file-input-text.has-files {
   color: hsl(var(--primary));
   font-weight: 600;
+  font-size: var(--font-size-sm);
 }
 
 /* Add Files Section for Existing Subjects */
@@ -1493,4 +1496,131 @@ body {
     align-self: stretch;
     text-align: center;
   }
+}
+
+/* File item cards - individual card styling for each uploaded file */
+.file-item {
+  background: var(--gradient-card);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  transition: var(--transition-elastic);
+  box-shadow: var(--shadow-md);
+  animation: scaleIn 0.5s ease-out both;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  position: relative;
+  overflow: hidden;
+}
+
+.file-item:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: var(--shadow-xl), 0 0 25px rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.file-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--gradient-primary);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.file-item:hover::before {
+  opacity: 1;
+}
+
+.file-item .file-icon {
+  font-size: var(--font-size-xl);
+  text-align: center;
+  margin-bottom: var(--space-2);
+  opacity: 0.8;
+}
+
+.file-item .file-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.file-item .file-details h4 {
+  margin: 0;
+  color: var(--gray-800);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.file-item .file-meta {
+  margin: 0;
+  color: var(--gray-600);
+  font-size: var(--font-size-sm);
+  opacity: 0.8;
+}
+
+.file-item .file-status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+  margin-top: var(--space-1);
+}
+
+.file-item .file-processed-time {
+  font-size: var(--font-size-xs);
+  color: var(--gray-500);
+  margin: 0;
+  opacity: 0.7;
+}
+
+.file-item .file-actions {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.file-item .file-actions button {
+  flex: 1;
+  padding: var(--space-2) var(--space-3);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition-bounce);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.file-item .open-button {
+  background: var(--gradient-primary);
+  color: white;
+  box-shadow: var(--shadow-sm);
+}
+
+.file-item .open-button:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: var(--shadow-md), 0 0 15px rgba(59, 130, 246, 0.3);
+}
+
+.file-item .delete-button {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  box-shadow: var(--shadow-sm);
+}
+
+.file-item .delete-button:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: var(--shadow-md), 0 0 15px rgba(239, 68, 68, 0.3);
 }
