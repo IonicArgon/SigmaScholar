@@ -1,126 +1,121 @@
-// KaTeX-based math rendering for Chrome extension
-import katex from 'katex'
-import 'katex/dist/katex.min.css'
-
+// Simple MathJax-based math rendering for Chrome extension
 declare global {
   interface Window {
     MathJax: any;
   }
 }
 
-// AsciiMath to LaTeX conversion map for common expressions
-const asciiMathToLatex: Record<string, string> = {
-  'sqrt': '\\sqrt',
-  'int': '\\int',
-  'sum': '\\sum',
-  'prod': '\\prod',
-  'alpha': '\\alpha',
-  'beta': '\\beta',
-  'gamma': '\\gamma',
-  'delta': '\\delta',
-  'epsilon': '\\epsilon',
-  'theta': '\\theta',
-  'pi': '\\pi',
-  'sigma': '\\sigma',
-  'phi': '\\phi',
-  'omega': '\\omega',
-  'infty': '\\infty',
-  'pm': '\\pm',
-  'mp': '\\mp',
-  'cdot': '\\cdot',
-  'times': '\\times',
-  'div': '\\div',
-  'ne': '\\neq',
-  'le': '\\leq',
-  'ge': '\\geq',
-  'lt': '<',
-  'gt': '>',
-  'in': '\\in',
-  'notin': '\\notin',
-  'subset': '\\subset',
-  'supset': '\\supset',
-  'cap': '\\cap',
-  'cup': '\\cup',
-  'and': '\\land',
-  'or': '\\lor',
-  'not': '\\neg',
-  'AA': '\\forall',
-  'EE': '\\exists',
-  'oo': '\\infty',
-  '+-': '\\pm'
-}
-
-// Convert basic AsciiMath to LaTeX
-const convertAsciiMathToLatex = (asciiMath: string): string => {
-  let latex = asciiMath
-
-  // Replace common AsciiMath symbols with LaTeX equivalents
-  Object.entries(asciiMathToLatex).forEach(([ascii, latexSymbol]) => {
-    const regex = new RegExp(`\\b${ascii}\\b`, 'g')
-    latex = latex.replace(regex, latexSymbol)
-  })
-
-  // Handle fractions: (a)/(b) -> \frac{a}{b}
-  latex = latex.replace(/\(([^)]+)\)\/\(([^)]+)\)/g, '\\frac{$1}{$2}')
-  latex = latex.replace(/([^/\s]+)\/([^/\s]+)/g, '\\frac{$1}{$2}')
-
-  // Handle subscripts: x_1 -> x_{1}
-  latex = latex.replace(/([a-zA-Z])_([a-zA-Z0-9]+)/g, '$1_{$2}')
-
-  // Handle superscripts: x^2 -> x^{2}
-  latex = latex.replace(/([a-zA-Z0-9])(\^)([a-zA-Z0-9]+)/g, '$1^{$3}')
-
-  // Handle square roots: sqrt(x) -> \sqrt{x}
-  latex = latex.replace(/sqrt\(([^)]+)\)/g, '\\sqrt{$1}')
-
-  // Handle integrals: int_a^b -> \int_a^b
-  latex = latex.replace(/int_([^\\s]+)\^([^\\s]+)/g, '\\int_{$1}^{$2}')
-
-  return latex
-}
-
-// Initialize KaTeX (no async initialization needed)
+// Initialize MathJax with a simple approach
 export const initializeMathJax = (): Promise<void> => {
   return new Promise((resolve) => {
-    // Set up global MathJax object for compatibility
-    window.MathJax = {
-      typesetPromise: (elements: HTMLElement[]) => {
-        return Promise.all(elements.map(element => {
-          if (!element) return Promise.resolve()
-          
-          try {
-            // Process AsciiMath expressions (backtick delimited)
-            const html = element.innerHTML
-            const processedHtml = html.replace(/`([^`]+)`/g, (match, asciiMath) => {
-              try {
-                // Convert AsciiMath to LaTeX
-                const latex = convertAsciiMathToLatex(asciiMath.trim())
-                
-                // Render with KaTeX
-                const rendered = katex.renderToString(latex, {
-                  throwOnError: false,
-                  displayMode: false
-                })
-                
-                return rendered
-              } catch (error) {
-                console.warn('KaTeX rendering error for:', asciiMath, error)
-                return match // Return original if rendering fails
-              }
-            })
-            
-            element.innerHTML = processedHtml
-            return Promise.resolve()
-          } catch (error) {
-            console.warn('Math processing error:', error)
-            return Promise.resolve()
-          }
-        }))
+    try {
+      // Check if already initialized
+      if (window.MathJax && window.MathJax.typesetPromise) {
+        resolve()
+        return
       }
-    }
 
-    console.log('KaTeX math rendering initialized successfully')
-    resolve()
+      // Set up a simple MathJax-compatible interface
+      window.MathJax = {
+        typesetPromise: (elements: HTMLElement[]) => {
+          return Promise.all(elements.map(element => {
+            if (!element) return Promise.resolve()
+            
+            try {
+              // Simple AsciiMath to basic HTML conversion
+              const html = element.innerHTML
+              const processedHtml = html.replace(/`([^`]+)`/g, (match, asciiMath) => {
+                try {
+                  // Basic AsciiMath to HTML conversion
+                  let converted = asciiMath.trim()
+                  
+                  // Handle common mathematical expressions
+                  converted = converted
+                    // Greek letters
+                    .replace(/\balpha\b/g, 'α')
+                    .replace(/\bbeta\b/g, 'β')
+                    .replace(/\bgamma\b/g, 'γ')
+                    .replace(/\bdelta\b/g, 'δ')
+                    .replace(/\bepsilon\b/g, 'ε')
+                    .replace(/\btheta\b/g, 'θ')
+                    .replace(/\bpi\b/g, 'π')
+                    .replace(/\bsigma\b/g, 'σ')
+                    .replace(/\bphi\b/g, 'φ')
+                    .replace(/\bomega\b/g, 'ω')
+                    
+                    // Mathematical operators
+                    .replace(/\binfty\b/g, '∞')
+                    .replace(/\bpm\b/g, '±')
+                    .replace(/\bmp\b/g, '∓')
+                    .replace(/\bcdot\b/g, '·')
+                    .replace(/\btimes\b/g, '×')
+                    .replace(/\bdiv\b/g, '÷')
+                    .replace(/\bne\b/g, '≠')
+                    .replace(/\ble\b/g, '≤')
+                    .replace(/\bge\b/g, '≥')
+                    .replace(/\bin\b/g, '∈')
+                    .replace(/\bnotin\b/g, '∉')
+                    .replace(/\bsubset\b/g, '⊂')
+                    .replace(/\bsupset\b/g, '⊃')
+                    .replace(/\bcap\b/g, '∩')
+                    .replace(/\bcup\b/g, '∪')
+                    .replace(/\band\b/g, '∧')
+                    .replace(/\bor\b/g, '∨')
+                    .replace(/\bnot\b/g, '¬')
+                    .replace(/\bAA\b/g, '∀')
+                    .replace(/\bEE\b/g, '∃')
+                    .replace(/\boo\b/g, '∞')
+                    .replace(/\+-/g, '±')
+                    
+                    // Handle fractions: (a)/(b) or a/b
+                    .replace(/\(([^)]+)\)\/\(([^)]+)\)/g, '<sup>$1</sup>⁄<sub>$2</sub>')
+                    .replace(/([^/\s]+)\/([^/\s]+)/g, '<sup>$1</sup>⁄<sub>$2</sub>')
+                    
+                    // Handle subscripts: x_1
+                    .replace(/([a-zA-Z0-9])_([a-zA-Z0-9]+)/g, '$1<sub>$2</sub>')
+                    
+                    // Handle superscripts: x^2
+                    .replace(/([a-zA-Z0-9])\^([a-zA-Z0-9]+)/g, '$1<sup>$2</sup>')
+                    
+                    // Handle square roots: sqrt(x)
+                    .replace(/sqrt\(([^)]+)\)/g, '√($1)')
+                    
+                    // Handle integrals: int_a^b
+                    .replace(/int_([^\s]+)\^([^\s]+)/g, '∫<sub>$1</sub><sup>$2</sup>')
+                    .replace(/\bint\b/g, '∫')
+                    
+                    // Handle summation: sum_a^b
+                    .replace(/sum_([^\s]+)\^([^\s]+)/g, '∑<sub>$1</sub><sup>$2</sup>')
+                    .replace(/\bsum\b/g, '∑')
+                    
+                    // Handle products: prod_a^b
+                    .replace(/prod_([^\s]+)\^([^\s]+)/g, '∏<sub>$1</sub><sup>$2</sup>')
+                    .replace(/\bprod\b/g, '∏')
+                  
+                  return `<span class="math-expression" style="font-style: italic; color: #2563eb;">${converted}</span>`
+                } catch (error) {
+                  console.warn('Math conversion error for:', asciiMath, error)
+                  return match // Return original if conversion fails
+                }
+              })
+              
+              element.innerHTML = processedHtml
+              return Promise.resolve()
+            } catch (error) {
+              console.warn('Math processing error:', error)
+              return Promise.resolve()
+            }
+          }))
+        }
+      }
+
+      console.log('Simple MathJax-compatible renderer initialized successfully')
+      resolve()
+      
+    } catch (error) {
+      console.error('Failed to initialize math renderer:', error)
+      resolve() // Don't reject, just continue without math rendering
+    }
   })
 }
 
