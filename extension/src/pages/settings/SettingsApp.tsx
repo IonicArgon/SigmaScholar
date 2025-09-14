@@ -3,6 +3,8 @@ import { useAuth } from '@/contexts/AuthContext'
 import { updateUserProfile, addSubject, removeSubject, removeFileMetadata } from '@/lib/firestore'
 import { addFilesToSubject } from '@/lib/functions'
 import { getUserData, FileMetadata, Subject } from '@/lib/firestore'
+import { ShortsTracker, ShortsSettings } from '@/utils/shortsTracker'
+import { CohereAPI } from '@/content/utils/cohereAPI'
 
 
 // Use types from firestore.ts
@@ -25,7 +27,7 @@ const SettingsApp: React.FC = () => {
   const [userData, setUserData] = useState<UserData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'profile' | 'subjects' | 'files'>('profile')
+  const [activeTab, setActiveTab] = useState<'profile' | 'subjects' | 'files' | 'quiz'>('profile')
   
   // Debug logging
   console.log('SettingsApp rendering, user:', user)
@@ -43,13 +45,57 @@ const SettingsApp: React.FC = () => {
   const [uploadingFiles, setUploadingFiles] = useState(false)
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null)
 
+  // Quiz settings state
+  const [quizSettings, setQuizSettings] = useState<ShortsSettings>({ quizFrequency: 5, enabled: true })
+  const [cohereApiKey, setCohereApiKey] = useState<string>('')
+  const [savingQuizSettings, setSavingQuizSettings] = useState(false)
+
   // Removed Firebase Functions dependency
 
   useEffect(() => {
     if (user && !authLoading) {
       loadUserData()
+      loadQuizSettings()
     }
   }, [user, authLoading])
+
+  const loadQuizSettings = async () => {
+    try {
+      const settings = await ShortsTracker.getQuizSettings()
+      setQuizSettings(settings)
+      
+      // Load API key from storage if available
+      const result = await chrome.storage.local.get('cohere_api_key')
+      if (result.cohere_api_key) {
+        setCohereApiKey(result.cohere_api_key)
+        CohereAPI.setApiKey(result.cohere_api_key)
+      }
+    } catch (error) {
+      console.error('Failed to load quiz settings:', error)
+    }
+  }
+
+  const saveQuizSettings = async () => {
+    try {
+      setSavingQuizSettings(true)
+      
+      // Save quiz frequency settings
+      await ShortsTracker.updateQuizSettings(quizSettings)
+      
+      // Save API key
+      if (cohereApiKey.trim()) {
+        await chrome.storage.local.set({ cohere_api_key: cohereApiKey.trim() })
+        CohereAPI.setApiKey(cohereApiKey.trim())
+      }
+      
+      console.log('Quiz settings saved successfully')
+    } catch (error) {
+      console.error('Failed to save quiz settings:', error)
+      setError('Failed to save quiz settings. Please try again.')
+    } finally {
+      setSavingQuizSettings(false)
+    }
+  }
 
   const loadUserData = async () => {
     if (!user) return
@@ -409,6 +455,12 @@ const SettingsApp: React.FC = () => {
         >
           Files
         </button>
+        <button 
+          className={`tab-button ${activeTab === 'quiz' ? 'active' : ''}`}
+          onClick={() => setActiveTab('quiz')}
+        >
+          Quiz Settings
+        </button>
       </div>
 
       <div className="settings-content">
@@ -620,6 +672,99 @@ const SettingsApp: React.FC = () => {
                   ))}
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'quiz' && (
+          <div className="quiz-section">
+            <div className="section-card">
+              <h3>Quiz Blocker Settings</h3>
+              <p className="section-description">
+                Configure how often quiz questions appear when watching YouTube Shorts to enhance your learning experience.
+              </p>
+              
+              <div className="quiz-settings-form">
+                <div className="form-row">
+                  <label htmlFor="quiz-enabled">
+                    <input
+                      id="quiz-enabled"
+                      type="checkbox"
+                      checked={quizSettings.enabled}
+                      onChange={(e) => setQuizSettings(prev => ({ ...prev, enabled: e.target.checked }))}
+                    />
+                    Enable Quiz Blocker
+                  </label>
+                  <p className="field-description">
+                    When enabled, quiz questions will appear after watching a certain number of shorts.
+                  </p>
+                </div>
+
+                <div className="form-row">
+                  <label htmlFor="quiz-frequency">Quiz Frequency:</label>
+                  <select
+                    id="quiz-frequency"
+                    value={quizSettings.quizFrequency}
+                    onChange={(e) => setQuizSettings(prev => ({ ...prev, quizFrequency: parseInt(e.target.value) }))}
+                    disabled={!quizSettings.enabled}
+                  >
+                    <option value={3}>Every 3 shorts</option>
+                    <option value={5}>Every 5 shorts</option>
+                    <option value={7}>Every 7 shorts</option>
+                    <option value={10}>Every 10 shorts</option>
+                    <option value={15}>Every 15 shorts</option>
+                    <option value={20}>Every 20 shorts</option>
+                  </select>
+                  <p className="field-description">
+                    How many shorts you can watch before a quiz question appears.
+                  </p>
+                </div>
+
+                <div className="form-row">
+                  <label htmlFor="cohere-api-key">Cohere API Key (Optional):</label>
+                  <input
+                    id="cohere-api-key"
+                    type="password"
+                    value={cohereApiKey}
+                    onChange={(e) => setCohereApiKey(e.target.value)}
+                    placeholder="Enter your Cohere API key for dynamic questions"
+                  />
+                  <p className="field-description">
+                    Provide your Cohere API key to generate personalized quiz questions based on video content. 
+                    Without this, fallback questions will be used.
+                  </p>
+                </div>
+
+                <button
+                  onClick={saveQuizSettings}
+                  disabled={savingQuizSettings}
+                  className="save-settings-button"
+                >
+                  {savingQuizSettings ? 'Saving...' : 'Save Quiz Settings'}
+                </button>
+              </div>
+            </div>
+
+            <div className="section-card">
+              <h3>Quiz Statistics</h3>
+              <div className="quiz-stats">
+                <div className="stat-item">
+                  <span className="stat-label">Current Status:</span>
+                  <span className={`stat-value ${quizSettings.enabled ? 'enabled' : 'disabled'}`}>
+                    {quizSettings.enabled ? 'Enabled' : 'Disabled'}
+                  </span>
+                </div>
+                <div className="stat-item">
+                  <span className="stat-label">Quiz Frequency:</span>
+                  <span className="stat-value">Every {quizSettings.quizFrequency} shorts</span>
+                </div>
+                <div className="stat-item">
+                  <span className="stat-label">API Status:</span>
+                  <span className={`stat-value ${cohereApiKey ? 'configured' : 'not-configured'}`}>
+                    {cohereApiKey ? 'API Key Configured' : 'Using Fallback Questions'}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         )}

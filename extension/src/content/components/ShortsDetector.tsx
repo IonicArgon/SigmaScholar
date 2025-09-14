@@ -2,17 +2,21 @@ import React, { useState, useEffect } from 'react'
 import { QuizBlocker } from '../../components/QuizBlocker'
 import { ShortsTracker } from '../../utils/shortsTracker'
 
-interface Question {
-  id: string
+interface QuizQuestion {
+  id?: string
   question: string
+  type: string
   options: string[]
   correctAnswer: number
-  explanation?: string
+  explanations: {
+    correct: string
+    incorrect: string[]
+  }
 }
 
 export const ShortsDetector: React.FC = () => {
   const [showQuiz, setShowQuiz] = useState(false)
-  const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null)
+  const [currentQuestion, setCurrentQuestion] = useState<QuizQuestion | null>(null)
   const [, setIsLoading] = useState(false)
 
   useEffect(() => {
@@ -81,36 +85,33 @@ export const ShortsDetector: React.FC = () => {
     setIsLoading(true)
     
     try {
-      // Use fallback question since we're now using Cohere API for question generation
-      setCurrentQuestion({
-        id: 'fallback',
-        question: 'What is the primary benefit of active learning?',
+      // For now, use your existing question generation system
+      // This should be replaced with your actual API call that returns the JSON format you showed
+      const question: QuizQuestion = {
+        question: "Just like how you're procrastinating on your assignment by watching cat videos, imagine you're avoiding solving a first-order linear ODE. Which of these strategies would actually help you solve the equation \\(x^2 \\frac{dy}{dx} + e^x y = 3\\sin(x)\\) instead of just watching cats?",
+        type: "multiple_choice",
         options: [
-          'It requires less effort',
-          'It improves retention and understanding',
-          'It takes less time',
-          'It eliminates the need for practice'
+          "Use the integrating factor method because the equation is linear and nonhomogeneous",
+          "Apply separation of variables since it's a simple trick for any ODE",
+          "Guess the solution by randomly meowing at your calculator",
+          "Transform it into a nonlinear equation to make it more interesting"
         ],
-        correctAnswer: 1,
-        explanation: 'Active learning engages multiple cognitive processes, leading to better retention and deeper understanding of the material.'
-      })
+        correctAnswer: 0,
+        explanations: {
+          correct: "The equation \\(x^2 \\frac{dy}{dx} + e^x y = 3\\sin(x)\\) is a first-order linear nonhomogeneous ODE. The integrating factor method is the correct approach for solving such equations, as it directly addresses the linearity and nonhomogeneity.",
+          incorrect: [
+            "Separation of variables works for separable equations, but this one isn't separable due to the linear combination of \\(y\\) and \\(\\frac{dy}{dx}\\).",
+            "Random guessing (or meowing) won't solve a mathematical problem—it's as ineffective as procrastinating with cat videos.",
+            "Transforming a linear equation into a nonlinear one would complicate the problem unnecessarily and defeat the purpose of using established methods for linear ODEs."
+          ]
+        }
+      }
+      
+      setCurrentQuestion(question)
       setShowQuiz(true)
+      
     } catch (error) {
       console.error('Failed to load quiz question:', error)
-      // Fallback question
-      setCurrentQuestion({
-        id: 'fallback',
-        question: 'What is the primary benefit of active learning?',
-        options: [
-          'It requires less effort',
-          'It improves retention and understanding',
-          'It takes less time',
-          'It eliminates the need for practice'
-        ],
-        correctAnswer: 1,
-        explanation: 'Active learning engages multiple cognitive processes, leading to better retention and deeper understanding of the material.'
-      })
-      setShowQuiz(true)
     } finally {
       setIsLoading(false)
     }
@@ -136,13 +137,22 @@ export const ShortsDetector: React.FC = () => {
     return null
   }
 
-  return (
+  // Convert QuizQuestion to Question format for QuizBlocker
+  const questionForBlocker = currentQuestion ? {
+    id: `quiz_${Date.now()}`,
+    question: currentQuestion.question,
+    options: currentQuestion.options,
+    correctAnswer: currentQuestion.correctAnswer,
+    explanation: currentQuestion.explanations.correct
+  } : null
+
+  return questionForBlocker ? (
     <QuizBlocker
-      question={currentQuestion}
+      question={questionForBlocker}
       onComplete={handleQuizComplete}
       onSkip={handleQuizSkip}
     />
-  )
+  ) : null
 }
 
 export default ShortsDetector
