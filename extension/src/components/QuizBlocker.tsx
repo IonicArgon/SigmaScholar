@@ -12,13 +12,11 @@ interface Question {
 interface QuizBlockerProps {
   question: Question
   onComplete: (correct: boolean) => void
-  onSkip?: () => void
 }
 
 export const QuizBlocker: React.FC<QuizBlockerProps> = ({ 
   question, 
-  onComplete, 
-  onSkip 
+  onComplete
 }) => {
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null)
   const [showResult, setShowResult] = useState(false)
@@ -49,11 +47,6 @@ export const QuizBlocker: React.FC<QuizBlockerProps> = ({
     onComplete(isCorrect)
   }
 
-  const handleSkipQuiz = () => {
-    if (onSkip) {
-      onSkip()
-    }
-  }
 
   return (
     <div className={`quiz-blocker-overlay ${mounted ? 'mounted' : ''}`}>
@@ -134,11 +127,6 @@ export const QuizBlocker: React.FC<QuizBlockerProps> = ({
               <div className="button-glow" />
             </button>
             
-            {onSkip && (
-              <button className="skip-button" onClick={handleSkipQuiz}>
-                Skip Quiz
-              </button>
-            )}
           </div>
         ) : (
           <div className="quiz-actions">
@@ -146,12 +134,8 @@ export const QuizBlocker: React.FC<QuizBlockerProps> = ({
               className="submit-button"
               onClick={handleContinue}
             >
-              <span>Next Question</span>
+              <span>Keep Scrolling</span>
               <div className="button-glow" />
-            </button>
-            
-            <button className="skip-button" onClick={handleContinue}>
-              Keep Scrolling
             </button>
           </div>
         )}

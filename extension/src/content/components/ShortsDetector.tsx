@@ -305,12 +305,6 @@ export const ShortsDetector: React.FC = () => {
     resumeYouTubeVideo()
   }
 
-  const handleQuizSkip = () => {
-    // Quiz skipped
-    setShowQuiz(false)
-    setCurrentQuestion(null)
-    resumeYouTubeVideo()
-  }
 
   // Show loading state when generating quiz
   if (isLoading) {
@@ -394,7 +388,6 @@ export const ShortsDetector: React.FC = () => {
     <QuizBlocker
       question={questionForBlocker}
       onComplete={handleQuizComplete}
-      onSkip={handleQuizSkip}
     />
   ) : null
 }
