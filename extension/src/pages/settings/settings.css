@@ -85,9 +85,10 @@ body {
 }
 
 .settings-container {
+  width: 100%;
   max-width: 1200px;
   margin: 0 auto;
-  padding: var(--space-8);
+  padding: var(--space-6);
   font-family: var(--font-family);
   background: var(--gradient-secondary);
   min-height: 100vh;
@@ -95,11 +96,11 @@ body {
 
 .settings-header {
   text-align: center;
-  margin-bottom: var(--space-16);
+  margin-bottom: var(--space-10);
 }
 
 .settings-title {
-  font-size: var(--font-size-4xl);
+  font-size: var(--font-size-2xl);
   font-weight: 700;
   color: var(--gray-800);
   margin-bottom: var(--space-2);
@@ -110,7 +111,7 @@ body {
 }
 
 .settings-subtitle {
-  font-size: var(--font-size-lg);
+  font-size: var(--font-size-base);
   color: var(--gray-600);
   font-weight: 400;
 }
@@ -159,19 +160,19 @@ body {
   display: flex;
   background: var(--gradient-card);
   backdrop-filter: blur(10px);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-lg);
-  margin-bottom: var(--space-10);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  margin-bottom: var(--space-6);
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .tab-button {
   flex: 1;
-  padding: var(--space-5) var(--space-8);
+  padding: var(--space-3) var(--space-5);
   background: transparent;
   border: none;
-  font-size: var(--font-size-base);
+  font-size: var(--font-size-sm);
   font-weight: 500;
   cursor: pointer;
   transition: var(--transition-normal);
@@ -201,30 +202,30 @@ body {
 .section-card {
   background: var(--gradient-card);
   backdrop-filter: blur(10px);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-lg);
-  padding: var(--space-8);
-  margin-bottom: var(--space-8);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: var(--space-5);
+  margin-bottom: var(--space-5);
   border: 1px solid rgba(255, 255, 255, 0.2);
   transition: var(--transition-normal);
 }
 
 .section-card:hover {
   transform: translateY(-1px);
-  box-shadow: var(--shadow-xl);
+  box-shadow: var(--shadow-lg);
 }
 
 .section-card h3 {
-  margin: 0 0 var(--space-6) 0;
+  margin: 0 0 var(--space-4) 0;
   color: var(--gray-800);
-  font-size: var(--font-size-xl);
+  font-size: var(--font-size-lg);
   font-weight: 600;
 }
 
 .section-card h4 {
-  margin: 0 0 var(--space-5) 0;
+  margin: 0 0 var(--space-3) 0;
   color: var(--gray-700);
-  font-size: var(--font-size-lg);
+  font-size: var(--font-size-base);
   font-weight: 600;
 }
 
@@ -330,7 +331,7 @@ body {
 .subjects-section {
   display: flex;
   flex-direction: column;
-  gap: var(--space-8);
+  gap: var(--space-5);
 }
 
 .subjects-section .section-card:first-child {
@@ -344,18 +345,18 @@ body {
   top: 0;
   left: 0;
   right: 0;
-  height: 4px;
+  height: 3px;
   background: var(--gradient-primary);
-  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 
 .add-subject-form {
   display: flex;
   flex-direction: column;
-  gap: var(--space-6);
-  padding: var(--space-6);
+  gap: var(--space-4);
+  padding: var(--space-4);
   background: rgba(255, 255, 255, 0.5);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   border: 1px solid rgba(255, 255, 255, 0.3);
   transition: var(--transition-normal);
 }
@@ -363,14 +364,14 @@ body {
 .add-subject-form:hover {
   background: rgba(255, 255, 255, 0.7);
   transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-sm);
 }
 
 .add-subject-form input {
-  padding: var(--space-4) var(--space-5);
+  padding: var(--space-3) var(--space-4);
   border: 2px solid var(--gray-300);
   border-radius: var(--radius-md);
-  font-size: var(--font-size-base);
+  font-size: var(--font-size-sm);
   transition: var(--transition-fast);
   background: rgba(255, 255, 255, 0.9);
   color: var(--gray-800);
@@ -394,31 +395,31 @@ body {
 
 .add-button {
   align-self: flex-start;
-  padding: var(--space-4) var(--space-8);
+  padding: var(--space-3) var(--space-6);
   background: var(--gradient-primary);
   color: white;
   border: none;
-  border-radius: var(--radius-lg);
-  font-size: var(--font-size-base);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
   font-weight: 600;
   cursor: pointer;
   transition: var(--transition-fast);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-sm);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   white-space: nowrap;
 }
 
 .add-button:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 
 .add-button:disabled {
   background: var(--gray-400);
   cursor: not-allowed;
   transform: none;
-  box-shadow: var(--shadow-sm);
+  box-shadow: none;
 }
 
 .subjects-grid {
@@ -517,67 +518,131 @@ body {
   margin-bottom: var(--space-2);
 }
 
-.upload-form .form-row select,
-.upload-form .form-row input[type="file"] {
-  padding: var(--space-4) var(--space-5);
+.upload-form .form-row select {
+  padding: var(--space-3) var(--space-4);
   border: 2px solid var(--gray-300);
   border-radius: var(--radius-md);
-  font-size: var(--font-size-base);
+  font-size: var(--font-size-sm);
   transition: var(--transition-fast);
   background: rgba(255, 255, 255, 0.9);
   color: var(--gray-800);
   cursor: pointer;
 }
 
-.upload-form .form-row select:focus,
-.upload-form .form-row input[type="file"]:focus {
+.upload-form .form-row select:focus {
   outline: none;
   border-color: var(--primary-500);
   box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
 }
 
-.upload-form .form-row select:hover,
-.upload-form .form-row input[type="file"]:hover {
+.upload-form .form-row select:hover {
   border-color: var(--primary-400);
   transform: translateY(-1px);
   box-shadow: var(--shadow-sm);
 }
 
-.upload-form .form-row select:disabled,
-.upload-form .form-row input[type="file"]:disabled {
+.upload-form .form-row select:disabled {
   background: var(--gray-100);
   color: var(--gray-400);
   cursor: not-allowed;
   opacity: 0.6;
 }
 
+/* Custom File Input Styling */
+.file-input-wrapper {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+}
+
+.file-input-wrapper input[type="file"] {
+  position: absolute;
+  left: -9999px;
+  opacity: 0;
+}
+
+.file-input-button {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border: 2px solid var(--gray-300);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--gray-700);
+  cursor: pointer;
+  transition: var(--transition-fast);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.file-input-button:hover {
+  border-color: var(--primary-400);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+  background: rgba(255, 255, 255, 1);
+}
+
+.file-input-button:focus-within {
+  outline: none;
+  border-color: var(--primary-500);
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+}
+
+.file-input-button.disabled {
+  background: var(--gray-100);
+  color: var(--gray-400);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.file-input-button.disabled:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.file-input-icon {
+  font-size: var(--font-size-base);
+}
+
+.file-input-text {
+  flex: 1;
+  text-align: left;
+}
+
+.file-input-text.has-files {
+  color: var(--primary-600);
+  font-weight: 500;
+}
+
 .upload-button {
   align-self: flex-start;
-  padding: var(--space-4) var(--space-8);
+  padding: var(--space-3) var(--space-6);
   background: var(--success-500);
   color: white;
   border: none;
-  border-radius: var(--radius-lg);
-  font-size: var(--font-size-base);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
   font-weight: 600;
   cursor: pointer;
   transition: var(--transition-fast);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-sm);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .upload-button:hover:not(:disabled) {
   background: var(--success-600);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 
 .upload-button:disabled {
   background: var(--gray-400);
   cursor: not-allowed;
   transform: none;
-  box-shadow: var(--shadow-sm);
+  box-shadow: none;
 }
 
 .files-by-subject {
@@ -784,7 +849,7 @@ body {
 .quiz-section {
   display: flex;
   flex-direction: column;
-  gap: var(--space-8);
+  gap: var(--space-5);
 }
 
 .quiz-section .section-card:first-child {
@@ -798,24 +863,24 @@ body {
   top: 0;
   left: 0;
   right: 0;
-  height: 4px;
+  height: 3px;
   background: var(--gradient-primary);
-  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 
 .quiz-settings-form {
   display: flex;
   flex-direction: column;
-  gap: var(--space-8);
+  gap: var(--space-5);
 }
 
 .quiz-settings-form .form-row {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  padding: var(--space-6);
+  padding: var(--space-4);
   background: rgba(255, 255, 255, 0.5);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   border: 1px solid rgba(255, 255, 255, 0.3);
   transition: var(--transition-normal);
 }
@@ -823,7 +888,7 @@ body {
 .quiz-settings-form .form-row:hover {
   background: rgba(255, 255, 255, 0.7);
   transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-sm);
 }
 
 .quiz-settings-form .form-row label {
@@ -832,12 +897,12 @@ body {
   gap: var(--space-3);
   font-weight: 600;
   color: var(--gray-800);
-  font-size: var(--font-size-base);
+  font-size: var(--font-size-sm);
   cursor: pointer;
 }
 
 .quiz-settings-form .form-row label[for="quiz-enabled"] {
-  font-size: var(--font-size-lg);
+  font-size: var(--font-size-base);
 }
 
 .quiz-settings-form .form-row input[type="checkbox"] {
@@ -926,30 +991,30 @@ body {
 
 .save-settings-button {
   align-self: flex-start;
-  padding: var(--space-4) var(--space-8);
+  padding: var(--space-3) var(--space-6);
   background: var(--gradient-primary);
   color: white;
   border: none;
-  border-radius: var(--radius-lg);
-  font-size: var(--font-size-base);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
   font-weight: 600;
   cursor: pointer;
   transition: var(--transition-fast);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-sm);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .save-settings-button:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 
 .save-settings-button:disabled {
   background: var(--gray-400);
   cursor: not-allowed;
   transform: none;
-  box-shadow: var(--shadow-sm);
+  box-shadow: none;
 }
 
 /* Quiz Statistics Styles */

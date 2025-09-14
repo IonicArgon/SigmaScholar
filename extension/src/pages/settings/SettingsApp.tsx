@@ -595,13 +595,27 @@ const SettingsApp: React.FC = () => {
                 </div>
                 <div className="form-row">
                   <label htmlFor="file-upload">Files:</label>
-                  <input
-                    id="file-upload"
-                    type="file"
-                    multiple
-                    onChange={(e) => setSelectedFiles(e.target.files)}
-                    disabled={uploadingFiles}
-                  />
+                  <div className="file-input-wrapper">
+                    <input
+                      id="file-upload"
+                      type="file"
+                      multiple
+                      onChange={(e) => setSelectedFiles(e.target.files)}
+                      disabled={uploadingFiles}
+                    />
+                    <div 
+                      className={`file-input-button ${uploadingFiles ? 'disabled' : ''}`}
+                      onClick={() => !uploadingFiles && document.getElementById('file-upload')?.click()}
+                    >
+                      <span className="file-input-icon">📁</span>
+                      <span className={`file-input-text ${selectedFiles && selectedFiles.length > 0 ? 'has-files' : ''}`}>
+                        {selectedFiles && selectedFiles.length > 0 
+                          ? `${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''} selected`
+                          : 'Choose files to upload'
+                        }
+                      </span>
+                    </div>
+                  </div>
                 </div>
                 <button
                   onClick={uploadFiles}
