@@ -1,6 +1,6 @@
 # SigmaScholar
 
-A Chrome extension and backend system for academic research and scholarly work.
+Transform your endless doomscrolling into productive micro-learning
 
 ## Project Structure
 
